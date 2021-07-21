@@ -1,8 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {renderTemplate} from './template'
-import type {KVP} from './template'
+import {KVP} from './types'
 import {WebClient} from '@slack/web-api'
+
+import {isMultiVars, parseList, parseMultiLineKVP} from './parsers'
 
 interface SlackActionStatusInput {
   botToken: string
@@ -21,75 +23,6 @@ interface SlackActionStatusInput {
 
 type SlackActionStatusInputs = `${string & keyof SlackActionStatusInput}`
 
-interface ActionError {
-  __error: true
-  message: string
-}
-
-interface MultiVars {
-  __error: false
-  variables: KVP
-}
-
-function multiVars(key: string, value: string): MultiVars {
-  return {
-    __error: false,
-    variables: {[key]: value}
-  }
-}
-
-function multiVarMerge(left: MultiVars, right: MultiVars): MultiVars {
-  return {
-    __error: false,
-    variables: {...left.variables, ...right.variables}
-  }
-}
-
-function actionError(message: string): ActionError {
-  return {__error: true, message}
-}
-
-const empty: MultiVars = {__error: false, variables: {}}
-
-const kvpRegEx = RegExp(/\s*-\s*([^:]*):\s*(.*)/).compile()
-function parseLine(line: string): MultiVars | ActionError {
-  const matches = line.match(kvpRegEx) ?? []
-  if (matches.length !== 2) {
-    return actionError(`Invalid input: ${line}. Expecting - <key>: <value>.`)
-  }
-  return multiVars(matches[0], matches[1])
-}
-
-function parseMultiLineKVP(input: string | null): MultiVars | ActionError[] {
-  const multilineInput = input?.trim() ?? ''
-  if (multilineInput === '') {
-    return empty
-  }
-  const lines = multilineInput.split('\n')
-  const vars = lines.map(parseLine)
-  const errors = vars.filter(v => v.__error === true) as ActionError[]
-  const mVars: MultiVars[] = vars.filter(
-    v => v.__error === false
-  ) as MultiVars[]
-  return errors.length > 0 ? errors : mVars.reduce(multiVarMerge, empty)
-}
-
-function parseList(listInput: string | null): string[] {
-  const string = listInput?.trim()
-  if (string === null || string === undefined || string === '') {
-    return []
-  } else {
-    return string.split(',')
-  }
-}
-
-function isMultiVars(val: unknown): val is MultiVars {
-  return (
-    (val as MultiVars).__error === false &&
-    (val as MultiVars).variables !== undefined
-  )
-}
-
 type Context = typeof github.context
 type WebhookPayload = Context['payload']
 type PullRequest = Exclude<WebhookPayload['pull_request'], undefined>
@@ -104,9 +37,17 @@ function hasPR(payload: WebhookPayload): payload is HasPullRequest {
 
 function getInput(
   name: SlackActionStatusInputs,
-  opts?: core.InputOptions
+  opts?: core.InputOptions,
+  defaultValue?: string
 ): string {
-  return core.getInput(name, opts)
+  const input = core.getInput(name, opts)
+  if (
+    defaultValue !== undefined &&
+    (input === null || input === undefined || input.trim() === '')
+  ) {
+    return defaultValue
+  }
+  return input
 }
 
 async function run(): Promise<void> {
@@ -122,21 +63,30 @@ async function run(): Promise<void> {
       core.getInput('completedPhases', {required: false})
     )
     const pendingPhases = parseList(
-      core.getInput('completedPhases', {required: false})
+      core.getInput('pendingPhases', {required: false})
     )
     const currentPhase = getInput('currentPhase', {required: false})
-    const currentPhaseIndicator =
-      getInput('currentPhaseIndicator', {
+    const currentPhaseIndicator = getInput(
+      'currentPhaseIndicator',
+      {
         required: false
-      }) ?? ':hourglass:'
-    const pendingPhaseIndicator =
-      getInput('pendingPhaseIndicator', {
+      },
+      ':hourglass:'
+    )
+    const pendingPhaseIndicator = getInput(
+      'pendingPhaseIndicator',
+      {
         required: false
-      }) ?? ':double_vertical_bar:'
-    const completedPhaseIndicator =
-      getInput('completedPhaseIndicator', {
+      },
+      ':double_vertical_bar:'
+    )
+    const completedPhaseIndicator = getInput(
+      'completedPhaseIndicator',
+      {
         required: false
-      }) ?? ':white_check_mark:'
+      },
+      ':white_check_mark:'
+    )
     const rawParams = parseMultiLineKVP(getInput('params', {required: false}))
     let params
     if (isMultiVars(rawParams)) {
@@ -155,13 +105,15 @@ async function run(): Promise<void> {
     const sha = hasPR(payload)
       ? payload.pull_request.head.sha
       : github.context.sha
+    const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare
+    const source = hasPR(payload) ? payload.pull_request.title : branch
     const url = hasPR(payload)
       ? payload.pull_request.html_url
       : payload.head_commit.url
-    const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare
-    const source = hasPR(payload) ? payload.pull_request.title : branch
-    const commitMessage = payload.head_commit.message
-    const user = payload.head_commit.author.username
+    const commitMessage = hasPR(payload)
+      ? payload.pull_request.body
+      : payload.head_commit.message
+    const user = payload.sender?.login ?? owner
     const thisPhase =
       currentPhase.trim() === ''
         ? []

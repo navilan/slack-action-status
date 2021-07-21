@@ -1,7 +1,6 @@
 import * as Eta from 'eta'
 import * as Path from 'path'
-
-export type KVP = {readonly [k in PropertyKey]: string}
+import type {KVP} from './types'
 
 export interface TemplateVars {
   params: KVP
