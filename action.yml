@@ -18,22 +18,22 @@ inputs:
     required: true
     description: Status of the build as of now
   completedPhases: 
-    required: true
+    required: false
     description: What phases of the build are complete?
   currentPhase:
-    required: true
+    required: false
     description: What is the current phase
   pendingPhases: 
-    required: true
+    required: false
     description: What phases of the build are still pending?
   completedPhaseIndicator: 
-    required: true
+    required: false
     description: Emoji or text to indicate a completed phase
   currentPhaseIndicator: 
-    required: true
+    required: false
     description: Emoji or text to indicate the current phase
   pendingPhaseIndicator: 
-    required: true
+    required: false
     description: Emoji or text to indicate a pending phase
   params:
     required: false

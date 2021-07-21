@@ -1,105 +1,110 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# Why?
 
-# Create a JavaScript Action using TypeScript
+Aren't there enough slack notifiers already?
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+Yes. But none of them seem to:
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+a) use the new slack blocks spec
+b) provide a way to customize the notification message
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+# How?
 
-## Create an action from this template
-
-Click the `Use this Template` and provide the new repo details for your action
-
-## Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
 ```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml contains defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
-
-```yaml
-uses: ./
+uses: navilan\slack-action-status@v1
 with:
-  milliseconds: 1000
+  botToken: "testBotToken"
+  channelId: "testChannelId"
+  templateFile: .github/workflows/slack-blocks.json
+  status: "Testing Action"
+  completedPhases: "Setup, Build"
+  currentPhase: "Test"
+  pendingPhases: "Deploy, Finalize, Finish"
+  completedPhaseIndicator: ":white_check_mark:"
+  currentPhaseIndicator: ":hourglass:"
+  pendingPhaseIndicator: ":double_vertical_bar:"
+
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+## Parameters
 
-## Usage:
+* botToken (Required)
+  [Read Slack documentation](https://api.slack.com/authentication/token-types#bot)
 
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+* channelId (Required)
+
+  You can get the channel id by clicking the chevron on the channel header.
+
+* templateFile (Required)
+
+  A template using the [slack block kit](https://api.slack.com/block-kit). [These variables](#vars) are available in the template. The template is rendered using the [eta](https://eta.js.org/) engine in its default configuration.
+
+* status (Required)
+
+  Current status.
+
+* completedPhases (Optional)
+
+  A comma separated list of phases that have been completed
+  
+* currentPhase (Optional)
+
+  The current build phase
+
+* pendingPhases (Optional)
+
+  List of pending phases
+
+* completedPhaseIndicator (Optional)
+
+  Text or slack emoji as an indicator for a completed phase
+
+* currentPhaseIndicator (Optional)
+
+  Text or slack emoji as an indicator for the current phase
+
+* pendingPhaseIndicator (Optional)
+
+  Text or slack emoji as an indicator for a pending phase
+
+* params (Optional)
+
+  A list of key, value pairs to feed the template.
+
+  ```
+  params:
+    - key1: value1
+    - key2: value2
+  ```
+
+* messageId (Optional)
+
+  A slack message that needs to be updated. If this is not provided, a new message is created.
+
+## vars
+
+```
+export interface TemplateVars {
+  params: KVP // Key value pairs of the `params` in the build file
+  workflow: string // The workflow thats running this action
+  gh: {
+    diff: string // URL to get the diff of this commit with the previous one
+    owner: string // Repo owner
+    repo: string // Repo name
+    sha: string 
+    branch: string 
+    event: string // pull_request or push?
+    source: string // branch or PR name based on the event
+    url: string // URL for the current event (commit url or PR url)
+    commitMessage: string // The message from the commit that triggered this run
+    user: string // Commit author
+  }
+  phases: { // Phases provided in the build in a template-convenient structure
+    name: string
+    indicator: string
+  }[]
+}
+```
+
+# Thank You
+
+[voxmedia](https://github.com/voxmedia/github-action-slack-notify-build)

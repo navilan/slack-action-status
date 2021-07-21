@@ -4,7 +4,7 @@
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": ":flying_saucer: <%= it.workflow %>",
+                "text": ":flying_saucer: build-test",
                 "emoji": true
             }
         },
@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _<%= it.gh.event %>_ => *<%= it.gh.source %>* by _@<%= it.gh.user %>_"
+                    "text": "On _push_ => *main* by _@navilan_"
                 }
             ]
         },
@@ -24,7 +24,7 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<<%= it.gh.url %> | <%= it.gh.commitMessage %>>"
+                "text": "<https://github.com | Add simple block templating>"
             }
         },
         {
@@ -34,20 +34,54 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<%= it.status %>"
+                "text": "Testing"
             }
         },
-        <% it.phases.forEach(function(step) { %>
         {
             "type": "context",
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<%= step.indicator %> <%= step.name %>"
+                    "text": ":white_check_mark: Setup"
                 }
             ]
         },
-        <% }) %>
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":white_check_mark:  Build"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":hourglass: Test"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":double_vertical_bar: Setup"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":double_vertical_bar:  Build"
+                }
+            ]
+        },
         {
             "type": "divider"
         },

@@ -10,7 +10,8 @@
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
     "package": "ncc build --source-map --license licenses.txt",
-    "all": "yarn build && yarn format && yarn lint && yarn package"
+    "test": "jest",
+    "all": "yarn build && yarn format && yarn lint && yarn test && yarn package"
   },
   "repository": {
     "type": "git",

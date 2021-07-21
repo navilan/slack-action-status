@@ -11,23 +11,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: ./
+        id: slack
+        with:
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json
+          status: "Build in progress"
+          currentPhase: "Setup"
+          pendingPhases: "Build, Test, Finish"
       - run: | 
           yarn
+      - uses: ./
+        with:
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json
+          status: "Build in progress"
+          completedPhases: "Setup"
+          currentPhase: "Build"
+          pendingPhases: "Test, Finish"
+          messageId: ${{ steps.slack.outputs.message_id }}
       - run: |
           yarn all
+      - uses: ./
+        with:
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json
+          status: "Build in progress"
+          completedPhases: "Setup, Build"
+          currentPhase: "Test"
+          pendingPhases: "Finish"
+          messageId: ${{ steps.slack.outputs.message_id }}
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: ./
         with:
-          botToken: "testBotToken"
-          channelId: "testChannelId"
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
           templateFile: .github/workflows/slack-blocks.json
-          status: "Testing Action"
-          completedPhases: "Setup, Build"
-          currentPhase: "Test"
-          pendingPhases: "Deploy, Finalize, Finish"
-          completedPhaseIndicator: ":white_check_mark:"
-          currentPhaseIndicator: ":hourglass:"
-          pendingPhaseIndicator: ":double_vertical_bar:"
+          status: "SUCCESS"
+          completedPhases: "Setup, Build, Test, Finish"
+          messageId: ${{ steps.slack.outputs.message_id }}

@@ -1,9 +1,8 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import * as Eta from 'eta'
-import * as Path from 'path'
-
-type KVP = {readonly [k in PropertyKey]: string}
+import {renderTemplate} from './template'
+import type {KVP} from './template'
+import {WebClient} from '@slack/web-api'
 
 interface SlackActionStatusInput {
   botToken: string
@@ -11,9 +10,9 @@ interface SlackActionStatusInput {
   messageId?: string
   templateFile: string
   status: string
-  completedPhases: string[]
-  currentPhase: string
-  pendingPhases: string[]
+  completedPhases?: string[]
+  currentPhase?: string
+  pendingPhases?: string[]
   completedPhaseIndicator: string
   currentPhaseIndicator: string
   pendingPhaseIndicator: string
@@ -84,10 +83,6 @@ function parseList(listInput: string | null): string[] {
   }
 }
 
-// function isActionError(val: unknown): val is ActionError {
-//   return (val as ActionError).__error === true
-// }
-
 function isMultiVars(val: unknown): val is MultiVars {
   return (
     (val as MultiVars).__error === false &&
@@ -116,26 +111,32 @@ function getInput(
 
 async function run(): Promise<void> {
   try {
-    // const botToken = getInput('botToken', {required: true})
-    // const channelId = getInput('channelId', {required: true})
-    // const messageId = getInput('messageId', {required: false})
+    const botToken = getInput('botToken', {required: true})
+    const channelId = getInput('channelId', {required: true})
+    const messageId = getInput('messageId', {required: false})
+    const status = getInput('status', {required: false})
+    const isUpdate =
+      messageId !== null && messageId !== undefined && messageId !== ''
     const templateFile = getInput('templateFile', {required: true})
     const completedPhases = parseList(
-      core.getInput('completedPhases', {required: true})
+      core.getInput('completedPhases', {required: false})
     )
     const pendingPhases = parseList(
-      core.getInput('completedPhases', {required: true})
+      core.getInput('completedPhases', {required: false})
     )
-    const currentPhase = getInput('currentPhase', {required: true})
-    const currentPhaseIndicator = getInput('currentPhaseIndicator', {
-      required: true
-    })
-    const pendingPhaseIndicator = getInput('pendingPhaseIndicator', {
-      required: true
-    })
-    const completedPhaseIndicator = getInput('completedPhaseIndicator', {
-      required: true
-    })
+    const currentPhase = getInput('currentPhase', {required: false})
+    const currentPhaseIndicator =
+      getInput('currentPhaseIndicator', {
+        required: false
+      }) ?? ':hourglass:'
+    const pendingPhaseIndicator =
+      getInput('pendingPhaseIndicator', {
+        required: false
+      }) ?? ':double_vertical_bar:'
+    const completedPhaseIndicator =
+      getInput('completedPhaseIndicator', {
+        required: false
+      }) ?? ':white_check_mark:'
     const rawParams = parseMultiLineKVP(getInput('params', {required: false}))
     let params
     if (isMultiVars(rawParams)) {
@@ -156,22 +157,28 @@ async function run(): Promise<void> {
       : github.context.sha
     const url = hasPR(payload)
       ? payload.pull_request.html_url
-      : github.context.serverUrl
+      : payload.head_commit.url
+    const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare
     const source = hasPR(payload) ? payload.pull_request.title : branch
     const commitMessage = payload.head_commit.message
     const user = payload.head_commit.author.username
+    const thisPhase =
+      currentPhase.trim() === ''
+        ? []
+        : [{name: currentPhase, indicator: currentPhaseIndicator}]
     const phases = [
       ...completedPhases.map(ph => ({
         name: ph,
         indicator: completedPhaseIndicator
       })),
-      {name: currentPhase, indicator: currentPhaseIndicator},
+      ...thisPhase,
       ...pendingPhases.map(ph => ({
         name: ph,
         indicator: pendingPhaseIndicator
       }))
     ]
     const gh = {
+      diff,
       owner,
       repo,
       sha,
@@ -185,22 +192,29 @@ async function run(): Promise<void> {
     const contextVars = {
       workflow,
       gh,
-      phases
+      phases,
+      status
     }
-    const config = Eta.getConfig({})
     // Load template file
-    const vars = {...params.variables, ...contextVars}
-    core.info(JSON.stringify(vars))
-    const message = await Eta.renderFileAsync(
-      Path.resolve(templateFile),
-      vars,
-      config
-    )
+    const vars = {params: params.variables, ...contextVars}
+    const message = await renderTemplate(templateFile, vars)
     if (!message) {
       core.setFailed(`Cannot render template {templateFile}`)
-    } else {
-      core.info(message)
+      return
     }
+    const blocks = JSON.parse(message).blocks
+    const postArgs = {
+      channel: channelId,
+      blocks,
+      text: status
+    }
+    const updateArgs = {...postArgs, ts: messageId ?? ''}
+
+    const slack = new WebClient(botToken)
+    const response = isUpdate
+      ? await slack.chat.update(updateArgs)
+      : await slack.chat.postMessage(postArgs)
+    core.setOutput('message_id', response.ts)
   } catch (error) {
     core.setFailed(error)
   }
