@@ -47,64 +47,19 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const template_1 = __nccwpck_require__(5032);
 const web_api_1 = __nccwpck_require__(431);
-function multiVars(key, value) {
-    return {
-        __error: false,
-        variables: { [key]: value }
-    };
-}
-function multiVarMerge(left, right) {
-    return {
-        __error: false,
-        variables: Object.assign(Object.assign({}, left.variables), right.variables)
-    };
-}
-function actionError(message) {
-    return { __error: true, message };
-}
-const empty = { __error: false, variables: {} };
-const kvpRegEx = RegExp(/\s*-\s*([^:]*):\s*(.*)/).compile();
-function parseLine(line) {
-    var _a;
-    const matches = (_a = line.match(kvpRegEx)) !== null && _a !== void 0 ? _a : [];
-    if (matches.length !== 2) {
-        return actionError(`Invalid input: ${line}. Expecting - <key>: <value>.`);
-    }
-    return multiVars(matches[0], matches[1]);
-}
-function parseMultiLineKVP(input) {
-    var _a;
-    const multilineInput = (_a = input === null || input === void 0 ? void 0 : input.trim()) !== null && _a !== void 0 ? _a : '';
-    if (multilineInput === '') {
-        return empty;
-    }
-    const lines = multilineInput.split('\n');
-    const vars = lines.map(parseLine);
-    const errors = vars.filter(v => v.__error === true);
-    const mVars = vars.filter(v => v.__error === false);
-    return errors.length > 0 ? errors : mVars.reduce(multiVarMerge, empty);
-}
-function parseList(listInput) {
-    const string = listInput === null || listInput === void 0 ? void 0 : listInput.trim();
-    if (string === null || string === undefined || string === '') {
-        return [];
-    }
-    else {
-        return string.split(',');
-    }
-}
-function isMultiVars(val) {
-    return (val.__error === false &&
-        val.variables !== undefined);
-}
+const parsers_1 = __nccwpck_require__(8055);
 function hasPR(payload) {
     return payload.pull_request !== undefined && payload.pull_request !== null;
 }
-function getInput(name, opts) {
-    return core.getInput(name, opts);
+function getInput(name, opts, defaultValue) {
+    const input = core.getInput(name, opts);
+    if (defaultValue !== undefined && (input === null || input === undefined || input.trim() === '')) {
+        return defaultValue;
+    }
+    return input;
 }
 function run() {
-    var _a, _b, _c;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const botToken = getInput('botToken', { required: true });
@@ -113,21 +68,21 @@ function run() {
             const status = getInput('status', { required: false });
             const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
             const templateFile = getInput('templateFile', { required: true });
-            const completedPhases = parseList(core.getInput('completedPhases', { required: false }));
-            const pendingPhases = parseList(core.getInput('completedPhases', { required: false }));
+            const completedPhases = parsers_1.parseList(core.getInput('completedPhases', { required: false }));
+            const pendingPhases = parsers_1.parseList(core.getInput('pendingPhases', { required: false }));
             const currentPhase = getInput('currentPhase', { required: false });
-            const currentPhaseIndicator = (_a = getInput('currentPhaseIndicator', {
+            const currentPhaseIndicator = getInput('currentPhaseIndicator', {
                 required: false
-            })) !== null && _a !== void 0 ? _a : ':hourglass:';
-            const pendingPhaseIndicator = (_b = getInput('pendingPhaseIndicator', {
+            }, ':hourglass:');
+            const pendingPhaseIndicator = getInput('pendingPhaseIndicator', {
                 required: false
-            })) !== null && _b !== void 0 ? _b : ':double_vertical_bar:';
-            const completedPhaseIndicator = (_c = getInput('completedPhaseIndicator', {
+            }, ':double_vertical_bar:');
+            const completedPhaseIndicator = getInput('completedPhaseIndicator', {
                 required: false
-            })) !== null && _c !== void 0 ? _c : ':white_check_mark:';
-            const rawParams = parseMultiLineKVP(getInput('params', { required: false }));
+            }, ':white_check_mark:');
+            const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
             let params;
-            if (isMultiVars(rawParams)) {
+            if (parsers_1.isMultiVars(rawParams)) {
                 params = rawParams;
             }
             else {
@@ -142,13 +97,15 @@ function run() {
             const sha = hasPR(payload)
                 ? payload.pull_request.head.sha
                 : github.context.sha;
+            const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare;
+            const source = hasPR(payload) ? payload.pull_request.title : branch;
             const url = hasPR(payload)
                 ? payload.pull_request.html_url
                 : payload.head_commit.url;
-            const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare;
-            const source = hasPR(payload) ? payload.pull_request.title : branch;
-            const commitMessage = payload.head_commit.message;
-            const user = payload.head_commit.author.username;
+            const commitMessage = hasPR(payload)
+                ? payload.pull_request.body
+                : payload.head_commit.message;
+            const user = (_b = (_a = payload.sender) === null || _a === void 0 ? void 0 : _a.login) !== null && _b !== void 0 ? _b : owner;
             const thisPhase = currentPhase.trim() === ''
                 ? []
                 : [{ name: currentPhase, indicator: currentPhaseIndicator }];
@@ -209,6 +166,74 @@ function run() {
     });
 }
 run();
+
+
+/***/ }),
+
+/***/ 8055:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isMultiVars = exports.parseList = exports.parseMultiLineKVP = exports.parseLine = exports.empty = exports.actionError = exports.multiVarMerge = exports.multiVars = void 0;
+function multiVars(key, value) {
+    return {
+        __error: false,
+        variables: { [key]: value }
+    };
+}
+exports.multiVars = multiVars;
+function multiVarMerge(left, right) {
+    return {
+        __error: false,
+        variables: Object.assign(Object.assign({}, left.variables), right.variables)
+    };
+}
+exports.multiVarMerge = multiVarMerge;
+function actionError(message) {
+    return { __error: true, message };
+}
+exports.actionError = actionError;
+exports.empty = { __error: false, variables: {} };
+const kvpRegEx = /\s*-\s*(?<key>[^:]+):\s*(?<value>.+)/;
+function parseLine(line) {
+    var _a;
+    const matches = (_a = kvpRegEx.exec(line)) !== null && _a !== void 0 ? _a : [];
+    if ((matches === null || matches === void 0 ? void 0 : matches.length) < 3) {
+        return actionError(`Invalid input: ${line}. Expecting - <key>: <value>.`);
+    }
+    return multiVars(matches[1], matches[2]);
+}
+exports.parseLine = parseLine;
+function parseMultiLineKVP(input) {
+    var _a;
+    const multilineInput = (_a = input === null || input === void 0 ? void 0 : input.trim()) !== null && _a !== void 0 ? _a : '';
+    if (multilineInput === '') {
+        return exports.empty;
+    }
+    const lines = multilineInput.split('\n');
+    const vars = lines.map(parseLine);
+    const errors = vars.filter(v => v.__error === true);
+    const mVars = vars.filter(v => v.__error === false);
+    return errors.length > 0 ? errors : mVars.reduce(multiVarMerge, exports.empty);
+}
+exports.parseMultiLineKVP = parseMultiLineKVP;
+function parseList(listInput) {
+    const string = listInput === null || listInput === void 0 ? void 0 : listInput.trim();
+    if (string === null || string === undefined || string === '') {
+        return [];
+    }
+    else {
+        return string.split(',');
+    }
+}
+exports.parseList = parseList;
+function isMultiVars(val) {
+    return (val.__error === false &&
+        val.variables !== undefined);
+}
+exports.isMultiVars = isMultiVars;
 
 
 /***/ }),
