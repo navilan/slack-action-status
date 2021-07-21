@@ -1,6 +1,6 @@
 {
   "name": "slack-action-status",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "description": "Customizable Github Action Slack notifier using Slack Block Kit",
   "main": "lib/main.js",

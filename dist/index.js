@@ -53,7 +53,8 @@ function hasPR(payload) {
 }
 function getInput(name, opts, defaultValue) {
     const input = core.getInput(name, opts);
-    if (defaultValue !== undefined && (input === null || input === undefined || input.trim() === '')) {
+    if (defaultValue !== undefined &&
+        (input === null || input === undefined || input.trim() === '')) {
         return defaultValue;
     }
     return input;

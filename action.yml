@@ -11,7 +11,7 @@ inputs:
   channelId: 
     required: true
     description: Slack Channel ID
-  messageId?: 
+  messageId: 
     required: false
     description: Slack Message ID for updates
   templateFile: 
