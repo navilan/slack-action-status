@@ -192,7 +192,9 @@ function run() {
             const postArgs = {
                 channel: channelId,
                 blocks,
-                text: status
+                text: status,
+                unfurl_links: false,
+                unfurl_media: false
             };
             const updateArgs = Object.assign(Object.assign({}, postArgs), { ts: messageId !== null && messageId !== void 0 ? messageId : '' });
             const slack = new web_api_1.WebClient(botToken);

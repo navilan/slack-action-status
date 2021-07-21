@@ -56,19 +56,19 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<http://github.com | Github>"
+                    "text": "<http://github.com | <%= it.params.GHL %>>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://google.com | Google>"
+                    "text": "<http://google.com | <%= it.params.GGL %>>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://apple.com | Apple>"
+                    "text": "<http://apple.com | <%= it.params.APL %>>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://microsoft.com | Microsoft>"
+                    "text": "<http://microsoft.com | <%= it.params.MSL %>>"
                 }
             ]
         }

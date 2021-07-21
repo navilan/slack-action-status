@@ -6,6 +6,13 @@ on: # rebuild any PRs and main branch changes
       - main
       - 'releases/*'
 
+env:
+  slack_params: |
+    - GHL: Github
+    - MSL: Microsoft
+    - APL: Apple
+    - GGL: Google
+
 jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
@@ -17,9 +24,10 @@ jobs:
           botToken: ${{ secrets.SLACK_BOT_TOKEN }}
           channelId: ${{ secrets.SLACK_CHANNEL_ID }}
           templateFile: .github/workflows/slack-blocks.json
-          status: "Build in progress"
+          status: "Build Started"
           currentPhase: "Setup"
           pendingPhases: "Build, Test, Finish"
+          params: ${{ env.slack_params }}
       - run: | 
           yarn
       - uses: ./
@@ -32,6 +40,7 @@ jobs:
           currentPhase: "Build"
           pendingPhases: "Test, Finish"
           messageId: ${{ steps.slack.outputs.message_id }}
+          params: ${{ env.slack_params }}
       - run: |
           yarn all
       - uses: ./
@@ -44,8 +53,10 @@ jobs:
           currentPhase: "Test"
           pendingPhases: "Finish"
           messageId: ${{ steps.slack.outputs.message_id }}
+          params: ${{ env.slack_params }}
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - uses: actions/checkout@v2
       - uses: ./
@@ -56,3 +67,4 @@ jobs:
           status: "SUCCESS"
           completedPhases: "Setup, Build, Test, Finish"
           messageId: ${{ steps.slack.outputs.message_id }}
+          params: ${{ env.slack_params }}
