@@ -206,7 +206,9 @@ async function run(): Promise<void> {
     const postArgs = {
       channel: channelId,
       blocks,
-      text: status
+      text: status,
+      unfurl_links: false,
+      unfurl_media: false
     }
     const updateArgs = {...postArgs, ts: messageId ?? ''}
 

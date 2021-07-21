@@ -4,7 +4,6 @@ import {renderTemplate} from '../src/template'
 import expected from './expected.json'
 
 const vars = {
-  params: {},
   workflow: 'build-test',
   status: 'Testing',
   gh: {
@@ -26,7 +25,13 @@ const vars = {
     {name: 'Test', indicator: ':hourglass:'},
     {name: 'Setup', indicator: ':double_vertical_bar:'},
     {name: ' Build', indicator: ':double_vertical_bar:'}
-  ]
+  ],
+  params: {
+    GHL: 'Github',
+    MSL: 'Microsoft',
+    APL: 'Apple',
+    GGL: 'Google'
+  }
 }
 describe('Sample Template', () => {
   it('Succeeds', async () => {
