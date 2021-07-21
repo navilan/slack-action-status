@@ -66,5 +66,4 @@ jobs:
           templateFile: .github/workflows/slack-blocks.json
           status: "SUCCESS"
           completedPhases: "Setup, Build, Test, Finish"
-          messageId: ${{ steps.slack.outputs.message_id }}
           params: ${{ env.slack_params }}

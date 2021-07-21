@@ -1,6 +1,9 @@
-name: 'navilan'
+name: 'Slack Action Status'
 description: 'Github Action to Notify Slack using a message template'
 author: 'navilan'
+branding: 
+  icon: bell
+  color: yellow 
 inputs:
   botToken: 
     required: true
