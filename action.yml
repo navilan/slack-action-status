@@ -1,11 +1,43 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'navilan'
+description: 'Github Action to Notify Slack using a message template'
+author: 'navilan'
 inputs:
-  milliseconds: # change this
+  botToken: 
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: Slack APP Bot Token
+  channelId: 
+    required: true
+    description: Slack Channel ID
+  messageId?: 
+    required: false
+    description: Slack Message ID for updates
+  templateFile: 
+    required: true
+    description: Message template using the Slack Blocks Spec
+  status: 
+    required: true
+    description: Status of the build as of now
+  completedPhases: 
+    required: true
+    description: What phases of the build are complete?
+  currentPhase:
+    required: true
+    description: What is the current phase
+  pendingPhases: 
+    required: true
+    description: What phases of the build are still pending?
+  completedPhaseIndicator: 
+    required: true
+    description: Emoji or text to indicate a completed phase
+  currentPhaseIndicator: 
+    required: true
+    description: Emoji or text to indicate the current phase
+  pendingPhaseIndicator: 
+    required: true
+    description: Emoji or text to indicate a pending phase
+  params:
+    required: false
+    description: "Additional parameters as string in '- <key>: <value>' format"
 runs:
   using: 'node12'
   main: 'dist/index.js'

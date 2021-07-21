@@ -1,0 +1,76 @@
+{
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": ":flying_saucer: <%= workflowName %>",
+                "emoji": true
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "On _<%= gh.event %>_ => *<%= gh.source %>* by _@<%= gh.user %>_"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<<%= gh.url %> | <%= gh.commitMessage %>>"
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "<%= status %>"
+            }
+        },
+        <% phases.foreach(function(step)) { %>
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "<%= step.indicator %> <%= step.name %>"
+                }
+            ]
+        },
+        <% } %>
+        {
+            "type": "divider"
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "<http://github.com | Github>"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "<http://google.com | Google>"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "<http://apple.com | Apple>"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "<http://microsoft.com | Microsoft>"
+                }
+            ]
+        }
+    ]
+}
