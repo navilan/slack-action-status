@@ -8,6 +8,7 @@ const vars: TemplateVars = {
   status: 'Testing',
   gh: {
     runId: 55796,
+    currentJobId: '7789',
     links: {
       eventSource: 'https://github.com',
       workflow: 'https://github.com/navilan/slack-action-status',

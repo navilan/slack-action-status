@@ -32,6 +32,12 @@ inputs:
   inclusionSuffix: 
     required: false
     description: Suffix that marks a step to be included in the message
+  forceSuccess:
+    required: false
+    description: Forces the current job status to be success overriding the API
+  forceFailure:
+    required: false
+    description: Forces the current job status to be failed overriding the API
 runs:
   using: 'node12'
   main: 'dist/index.js'

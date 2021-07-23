@@ -12,8 +12,7 @@ env:
     - link1: https://github.com/navilan/slack-action-status
 
 jobs:
-  slack:
-    name: Setup Slack Notification
+  Slack:
     runs-on: ubuntu-latest
     outputs:
       message_id: ${{ steps.slack.outputs.message_id }}
@@ -30,8 +29,7 @@ jobs:
           status: "Preparing"
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
-  build:
-    name: Build Source
+  Build:
     needs: slack
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +47,7 @@ jobs:
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
       - name: Install Deps !!
-        run: | 
+        run: |
           yarn
       - name: Notify 2
         uses: ./
@@ -67,6 +65,7 @@ jobs:
           yarn build
       - name: Notify 3
         uses: ./
+        if: success()
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           messageId: ${{ needs.slack.outputs.message_id }}
@@ -76,14 +75,25 @@ jobs:
           status: "Build in progress"
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
-  test: 
-    name: Verify Source
+      - uses: ./
+        if: failure()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "FAILED"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceFailure: true
+
+  Test:
     runs-on: ubuntu-latest
-    needs: 
+    needs:
       - slack
     steps:
-      - name: Checkout Source !!
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
       - uses: ./
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -91,11 +101,11 @@ jobs:
           botToken: ${{ secrets.SLACK_BOT_TOKEN }}
           channelId: ${{ secrets.SLACK_CHANNEL_ID }}
           templateFile: .github/workflows/slack-blocks.json.eta
-          status: "SUCCESS"
+          status: "Verifying Source"
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
       - name: Install Deps !!
-        run: | 
+        run: |
           yarn
       - name: Lint !!
         run: |
@@ -114,6 +124,7 @@ jobs:
         run: |
           yarn test
       - uses: ./
+        if: success()
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           messageId: ${{ needs.slack.outputs.message_id }}
@@ -123,23 +134,55 @@ jobs:
           status: "Testing"
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
-  finish: 
-    name: Package Action
+      - uses: ./
+        if: failure()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "FAILED"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceFailure: true
+
+  Finish:
     runs-on: ubuntu-latest
-    needs: 
+    needs:
       - slack
       - build
       - test
     steps:
-      - name: Checkout Source !!
-        uses: actions/checkout@v2
-      - name: Install Deps
-        run: | 
+      - uses: actions/checkout@v2
+      - uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Setup Package"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+      - name: Install Deps !!
+        run: |
           yarn
+      - uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Packaging"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
       - name: Package !!
         run: |
           yarn all
       - uses: ./
+        if: success()
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           messageId: ${{ needs.slack.outputs.message_id }}
@@ -149,3 +192,16 @@ jobs:
           status: "SUCCESS"
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
+          forceSuccess: true
+      - uses: ./
+        if: failure()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "FAILED"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceFailure: true

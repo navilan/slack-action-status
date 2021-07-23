@@ -64,6 +64,9 @@ function makeJob(
     ...makePhase(job, indicatorLookup),
     steps: (job.steps ?? [])
       .filter(s => !inclusionSuffix || s.name.endsWith(inclusionSuffix))
+      .map(s =>
+        inclusionSuffix ? {...s, name: s.name.replace(inclusionSuffix, '')} : s
+      )
       .map(s => makePhase(s, indicatorLookup))
   }
 }
