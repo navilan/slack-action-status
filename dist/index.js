@@ -64,7 +64,7 @@ function processInput() {
     const channelId = getInput('channelId', { required: true });
     const status = getInput('status', { required: true });
     const messageId = getInput('messageId', { required: false });
-    const exclusionSuffix = getInput('exclusionSuffix', { required: false });
+    const inclusionSuffix = getInput('inclusionSuffix', { required: false });
     const templateFile = getInput('templateFile', { required: false });
     const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
     let params;
@@ -91,7 +91,7 @@ function processInput() {
         status,
         params: params.variables,
         indicators,
-        exclusionSuffix
+        inclusionSuffix
     };
 }
 exports.processInput = processInput;
@@ -106,7 +106,7 @@ function processGithubContext() {
         ? payload.pull_request.head.sha
         : github.context.sha;
     const diff = hasPR(payload)
-        ? `${payload.pull_request._links.html}/files`
+        ? `${payload.pull_request._links.html.href}/files`
         : payload.compare;
     const source = hasPR(payload) ? payload.pull_request.title : branch;
     const url = hasPR(payload)
@@ -198,24 +198,23 @@ function makePhase(obj, indicatorLookup) {
         indicator
     };
 }
-function makeJob(job, indicatorLookup) {
+function makeJob(job, indicatorLookup, inclusionSuffix) {
     var _a;
     return {
         ...makePhase(job, indicatorLookup),
-        steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : []).map(s => makePhase(s, indicatorLookup))
+        steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : [])
+            .filter(s => !inclusionSuffix || s.name.endsWith(inclusionSuffix))
+            .map(s => makePhase(s, indicatorLookup))
     };
 }
-async function getJobs(githubToken, owner, repo, runId, indicatorLookup, exclusionSuffix) {
+async function getJobs(githubToken, owner, repo, runId, indicatorLookup, inclusionSuffix) {
     const octokit = github.getOctokit(githubToken);
     const { data: { jobs: oJobs } } = await octokit.rest.actions.listJobsForWorkflowRun({
         owner,
         repo,
         run_id: runId
     });
-    const filtered = exclusionSuffix
-        ? oJobs.filter(j => !j.name.endsWith(exclusionSuffix))
-        : oJobs;
-    return filtered.map(j => makeJob(j, indicatorLookup));
+    return oJobs.map(j => makeJob(j, indicatorLookup, inclusionSuffix));
 }
 exports.getJobs = getJobs;
 
@@ -272,8 +271,7 @@ async function run() {
         };
         if (inputContext.templateFile) {
             const githubContext = assembler_1.processGithubContext();
-            const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.exclusionSuffix);
-            core.info(JSON.stringify(jobs));
+            const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.inclusionSuffix);
             const contextVars = {
                 gh: githubContext,
                 status: inputContext.status,
@@ -289,12 +287,14 @@ async function run() {
             postArgs.blocks = JSON.parse(message).blocks;
         }
         const updateArgs = { ...postArgs, ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' };
+        core.info(JSON.stringify(updateArgs));
         const slack = new web_api_1.WebClient(inputContext.botToken);
         const messageId = inputContext.messageId;
         const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
         const response = isUpdate
             ? await slack.chat.update(updateArgs)
             : await slack.chat.postMessage(postArgs);
+        core.info(`message_id: ${response.ts}`);
         core.setOutput('message_id', response.ts);
     }
     catch (error) {

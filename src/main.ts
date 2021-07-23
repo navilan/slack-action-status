@@ -35,9 +35,8 @@ async function run(): Promise<void> {
         githubContext.repo,
         githubContext.runId,
         (status: PhaseStatus) => inputContext.indicators[status] ?? '',
-        inputContext.exclusionSuffix
+        inputContext.inclusionSuffix
       )
-      core.info(JSON.stringify(jobs))
       const contextVars = {
         gh: githubContext,
         status: inputContext.status,
@@ -53,6 +52,7 @@ async function run(): Promise<void> {
       postArgs.blocks = JSON.parse(message).blocks
     }
     const updateArgs = {...postArgs, ts: inputContext.messageId ?? ''}
+    core.info(JSON.stringify(updateArgs))
     const slack = new WebClient(inputContext.botToken)
     const messageId = inputContext.messageId
     const isUpdate =
@@ -60,6 +60,7 @@ async function run(): Promise<void> {
     const response = isUpdate
       ? await slack.chat.update(updateArgs)
       : await slack.chat.postMessage(postArgs)
+    core.info(`message_id: ${response.ts}`)
     core.setOutput('message_id', response.ts)
   } catch (error) {
     core.setFailed(error)

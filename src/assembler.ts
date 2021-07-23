@@ -57,7 +57,7 @@ interface AssembledInput {
   status: string
   params: KVP
   indicators: Indicators
-  exclusionSuffix?: string
+  inclusionSuffix?: string
 }
 
 export function processInput(): AssembledInput | ActionError {
@@ -67,7 +67,7 @@ export function processInput(): AssembledInput | ActionError {
   const status = getInput('status', {required: true})
 
   const messageId = getInput('messageId', {required: false})
-  const exclusionSuffix = getInput('exclusionSuffix', {required: false})
+  const inclusionSuffix = getInput('inclusionSuffix', {required: false})
   const templateFile = getInput('templateFile', {required: false})
   const rawParams = parseMultiLineKVP(getInput('params', {required: false}))
   let params
@@ -100,7 +100,7 @@ export function processInput(): AssembledInput | ActionError {
     status,
     params: params.variables,
     indicators,
-    exclusionSuffix
+    inclusionSuffix
   }
 }
 
@@ -114,7 +114,7 @@ export function processGithubContext(): SourceContext {
     ? payload.pull_request.head.sha
     : github.context.sha
   const diff = hasPR(payload)
-    ? `${payload.pull_request._links.html}/files`
+    ? `${payload.pull_request._links.html.href}/files`
     : payload.compare
   const source = hasPR(payload) ? payload.pull_request.title : branch
   const url = hasPR(payload)

@@ -34,7 +34,7 @@ interface SlackActionStatusInput {
   indicators: KVP
   messageId?: string
   templateFile?: string
-  exclusionSuffix?: string
+  inclusionSuffix?: string
 }
 
 export interface SourceContext {

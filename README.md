@@ -16,7 +16,7 @@ with:
   channelId: "testChannelId"
   templateFile: .github/workflows/slack-blocks.json.eta
   status: "Testing Action"
-  exclusionSuffix: "~~~" 
+  inclusionSuffix: "!!" 
   indicators: |
     - completed: ":white_check_mark:"
     - running: ":hourglass:"
@@ -95,9 +95,9 @@ with:
 
 ---
 
-* **exclusionSuffix** (Optional)
+* **inclusionSuffix** (Optional)
 
-    Steps that have a name suffixed with this pattern are excluded from the Slack notification message. Default: no exclusions.
+    Steps that have a name suffixed with this pattern are included in the Slack notification message. Default: All steps are shown.
 
 ---
 

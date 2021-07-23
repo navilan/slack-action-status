@@ -55,10 +55,16 @@ function makePhase(obj: Runnable, indicatorLookup: IndicatorLookup): Phase {
   }
 }
 
-function makeJob(job: OJob, indicatorLookup: IndicatorLookup): Job {
+function makeJob(
+  job: OJob,
+  indicatorLookup: IndicatorLookup,
+  inclusionSuffix?: string
+): Job {
   return {
     ...makePhase(job, indicatorLookup),
-    steps: (job.steps ?? []).map(s => makePhase(s, indicatorLookup))
+    steps: (job.steps ?? [])
+      .filter(s => !inclusionSuffix || s.name.endsWith(inclusionSuffix))
+      .map(s => makePhase(s, indicatorLookup))
   }
 }
 
@@ -68,7 +74,7 @@ export async function getJobs(
   repo: string,
   runId: number,
   indicatorLookup: IndicatorLookup,
-  exclusionSuffix?: string
+  inclusionSuffix?: string
 ): Promise<Job[]> {
   const octokit = github.getOctokit(githubToken)
   const {
@@ -78,8 +84,5 @@ export async function getJobs(
     repo,
     run_id: runId
   })
-  const filtered = exclusionSuffix
-    ? oJobs.filter(j => !j.name.endsWith(exclusionSuffix))
-    : oJobs
-  return filtered.map(j => makeJob(j, indicatorLookup))
+  return oJobs.map(j => makeJob(j, indicatorLookup, inclusionSuffix))
 }
