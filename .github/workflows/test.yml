@@ -8,62 +8,131 @@ on: # rebuild any PRs and main branch changes
 
 env:
   slack_params: |
-    - GHL: Github
-    - MSL: Microsoft
-    - APL: Apple
-    - GGL: Google
+    - name1: Slack Action Status
+    - link1: https://github.com/navilan/slack-action-status
 
 jobs:
-  build: # make sure build/ci work properly
+  slack:
     runs-on: ubuntu-latest
+    outputs:
+      message_id: ${ steps.slack.outputs.message_id }
     steps:
       - uses: actions/checkout@v2
       - uses: ./
         id: slack
         with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
           botToken: ${{ secrets.SLACK_BOT_TOKEN }}
           channelId: ${{ secrets.SLACK_CHANNEL_ID }}
-          templateFile: .github/workflows/slack-blocks.json
-          status: "Build Started"
-          currentPhase: "Setup"
-          pendingPhases: "Build, Test, Finish"
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Preparing"
           params: ${{ env.slack_params }}
-      - run: | 
+  build:
+    needs: slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Notify 1
+        uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Build Started"
+          params: ${{ env.slack_params }}
+      - name: Install Deps
+        run: | 
           yarn
+      - name: Notify 2
+        uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Build in progress"
+          params: ${{ env.slack_params }}
+      - name: Build Source
+        run: |
+          yarn build
+      - name: Notify 3
+        uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Build in progress"
+          params: ${{ env.slack_params }}
+  test: 
+    runs-on: ubuntu-latest
+    needs: 
+      - slack
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
       - uses: ./
         with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
           botToken: ${{ secrets.SLACK_BOT_TOKEN }}
           channelId: ${{ secrets.SLACK_CHANNEL_ID }}
-          templateFile: .github/workflows/slack-blocks.json
-          status: "Build in progress"
-          completedPhases: "Setup"
-          currentPhase: "Build"
-          pendingPhases: "Test, Finish"
-          messageId: ${{ steps.slack.outputs.message_id }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "SUCCESS"
           params: ${{ env.slack_params }}
-      - run: |
+      - name: Install Deps
+        run: | 
+          yarn
+      - name: Lint
+        run: |
+          yarn lint
+      - uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Linting"
+          params: ${{ env.slack_params }}
+      - name: Test
+        run: |
+          yarn test
+      - uses: ./
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Testing"
+          params: ${{ env.slack_params }}
+  finish: 
+    runs-on: ubuntu-latest
+    needs: 
+      - slack
+      - build
+      - test
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Install Deps
+        run: | 
+          yarn
+      - name: Package
+        run: |
           yarn all
       - uses: ./
         with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
           botToken: ${{ secrets.SLACK_BOT_TOKEN }}
           channelId: ${{ secrets.SLACK_CHANNEL_ID }}
-          templateFile: .github/workflows/slack-blocks.json
-          status: "Build in progress"
-          completedPhases: "Setup, Build"
-          currentPhase: "Test"
-          pendingPhases: "Finish"
-          messageId: ${{ steps.slack.outputs.message_id }}
-          params: ${{ env.slack_params }}
-  test: # make sure the action works on a clean machine without building
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ./
-        with:
-          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
-          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
-          templateFile: .github/workflows/slack-blocks.json
+          templateFile: .github/workflows/slack-blocks.json.eta
           status: "SUCCESS"
-          completedPhases: "Setup, Build, Test, Finish"
           params: ${{ env.slack_params }}

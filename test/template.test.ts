@@ -1,42 +1,96 @@
 import {expect, describe, it} from '@jest/globals'
 import {renderTemplate} from '../src/template'
+import {TemplateVars} from '../src/types'
 
 import expected from './expected.json'
 
-const vars = {
-  workflow: 'build-test',
+const vars: TemplateVars = {
   status: 'Testing',
   gh: {
+    runId: 55796,
+    links: {
+      eventSource: 'https://github.com',
+      workflow: 'https://github.com/navilan/slack-action-status',
+      diff: 'https://github.com/navilan/slack-action-status/compare/aa6be6db2eef...80c99e0fbb1f'
+    },
+    workflow: 'build-test',
     owner: 'navilan',
     repo: 'slack-action-status',
     sha: 'c5c7b0a3cf6b51d18ec7032eef5b8788fd483123',
     branch: 'main',
-    event: 'push',
-    source: 'main',
-    url: 'https://github.com',
-    commitMessage: 'Add simple block templating',
-    user: 'navilan',
-    diff:
-      'https://github.com/navilan/slack-action-status/compare/aa6be6db2eef...80c99e0fbb1f'
+    eventName: 'push',
+    eventSource: 'main',
+    description: 'Add simple block templating',
+    user: 'navilan'
   },
-  phases: [
-    {name: 'Setup', indicator: ':white_check_mark:'},
-    {name: ' Build', indicator: ':white_check_mark:'},
-    {name: 'Test', indicator: ':hourglass:'},
-    {name: 'Setup', indicator: ':double_vertical_bar:'},
-    {name: ' Build', indicator: ':double_vertical_bar:'}
+  jobs: [
+    {
+      name: 'Slack',
+      status: 'completed',
+      indicator: ':white_check_mark:'
+    },
+    {
+      name: 'PROnly',
+      status: 'skipped',
+      indicator: ':white_medium_square:'
+    },
+    {
+      name: 'Setup',
+      status: 'completed',
+      indicator: ':white_check_mark:'
+    },
+    {
+      name: 'Prepare',
+      status: 'completed',
+      indicator: ':white_check_mark:'
+    },
+    {
+      name: 'Test',
+      status: 'running',
+      indicator: ':hourglass:',
+      steps: [
+        {
+          name: 'lint',
+          status: 'completed',
+          indicator: ':white_check_mark:'
+        },
+        {
+          name: 'unit tests',
+          status: 'running',
+          indicator: ':hourglass:'
+        },
+        {
+          name: 'integration tests',
+          status: 'queued',
+          indicator: ':double_vertical_bar:'
+        },
+        {
+          name: 'e2e',
+          status: 'unclear',
+          indicator: ':hash:'
+        }
+      ]
+    },
+    {
+      name: 'Build Images',
+      status: 'queued',
+      indicator: ':double_vertical_bar:'
+    },
+    {
+      name: 'Publish',
+      status: 'unclear',
+      indicator: ':hash:'
+    }
   ],
   params: {
-    GHL: 'Github',
-    MSL: 'Microsoft',
-    APL: 'Apple',
-    GGL: 'Google'
+    name1: 'Github',
+    link1: 'https://github.com'
   }
 }
 describe('Sample Template', () => {
   it('Succeeds', async () => {
     const message = await renderTemplate(
-      '.github/workflows/slack-blocks.json',
+      '.github/workflows/slack-blocks.json.eta',
       vars
     )
     const object = JSON.parse(message || '{}')

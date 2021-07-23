@@ -9,6 +9,225 @@ module.exports = JSON.parse('{"name":"@slack/web-api","version":"6.3.0","descrip
 
 /***/ }),
 
+/***/ 7071:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.processGithubContext = exports.processInput = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const parsers_1 = __nccwpck_require__(8055);
+function hasPR(payload) {
+    return payload.pull_request !== undefined && payload.pull_request !== null;
+}
+function getInput(name, opts, defaultValue) {
+    const input = core.getInput(name, opts);
+    if (defaultValue !== undefined &&
+        (input === null || input === undefined || input.trim() === '')) {
+        return defaultValue;
+    }
+    return input;
+}
+const defaultIndicators = {
+    unclear: ':hash:',
+    queued: ':double_vertical_bar:',
+    running: ':hourglass:',
+    completed: ':white_check_mark:',
+    failed: ':x:',
+    cancelled: ':octagonal_sign:',
+    skipped: ':white_medium_square:'
+};
+function processInput() {
+    const githubToken = getInput('githubToken', { required: true });
+    const botToken = getInput('botToken', { required: true });
+    const channelId = getInput('channelId', { required: true });
+    const status = getInput('status', { required: true });
+    const messageId = getInput('messageId', { required: false });
+    const exclusionSuffix = getInput('exclusionSuffix', { required: false });
+    const templateFile = getInput('templateFile', { required: false });
+    const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
+    let params;
+    if (parsers_1.isMultiVars(rawParams)) {
+        params = rawParams;
+    }
+    else {
+        return parsers_1.actionError(rawParams.reduce((msg, err) => `${msg}\n${err.message}`, ''));
+    }
+    const rawIndicators = parsers_1.parseMultiLineKVP(getInput('indicators', { required: false }));
+    let indicators;
+    if (parsers_1.isMultiVars(rawIndicators)) {
+        indicators = Object.assign(Object.assign({}, defaultIndicators), rawIndicators.variables);
+    }
+    else {
+        return parsers_1.actionError(rawIndicators.reduce((msg, err) => `${msg}\n${err.message}`, ''));
+    }
+    return {
+        githubToken,
+        botToken,
+        channelId,
+        templateFile,
+        messageId,
+        status,
+        params: params.variables,
+        indicators,
+        exclusionSuffix
+    };
+}
+exports.processInput = processInput;
+function processGithubContext() {
+    var _a, _b;
+    const { repo: repoFull, payload, ref, workflow, eventName } = github.context;
+    const { owner, repo } = repoFull;
+    const branch = hasPR(payload)
+        ? payload.pull_request.head.ref
+        : ref.replace('refs/heads/', '');
+    const sha = hasPR(payload)
+        ? payload.pull_request.head.sha
+        : github.context.sha;
+    const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare;
+    const source = hasPR(payload) ? payload.pull_request.title : branch;
+    const url = hasPR(payload)
+        ? payload.pull_request.html_url
+        : payload.head_commit.url;
+    const description = hasPR(payload)
+        ? payload.pull_request.body
+        : payload.head_commit.message;
+    const user = (_b = (_a = payload.sender) === null || _a === void 0 ? void 0 : _a.login) !== null && _b !== void 0 ? _b : owner;
+    const runId = github.context.runId;
+    const workflowUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    return {
+        runId,
+        links: {
+            diff,
+            eventSource: url,
+            workflow: workflowUrl
+        },
+        workflow,
+        owner,
+        repo,
+        sha,
+        branch,
+        eventSource: source,
+        eventName,
+        description,
+        user
+    };
+}
+exports.processGithubContext = processGithubContext;
+
+
+/***/ }),
+
+/***/ 3597:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getJobs = void 0;
+const github = __importStar(__nccwpck_require__(5438));
+function getPhaseStatus(obj) {
+    switch (obj.status) {
+        case 'queued':
+            return 'queued';
+        case 'in_progress':
+            return 'running';
+        case 'completed':
+            switch (obj.conclusion) {
+                case 'cancelled':
+                    return 'cancelled';
+                case 'failure':
+                    return 'failed';
+                case 'success':
+                    return 'completed';
+                case 'skipped':
+                    return 'skipped';
+                default:
+                    return 'unclear';
+            }
+    }
+}
+function makePhase(obj, indicatorLookup) {
+    const status = getPhaseStatus(obj);
+    const indicator = indicatorLookup(status);
+    return {
+        name: obj.name,
+        status,
+        indicator
+    };
+}
+function makeJob(job, indicatorLookup) {
+    var _a;
+    return Object.assign(Object.assign({}, makePhase(job, indicatorLookup)), { steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : []).map(s => makePhase(s, indicatorLookup)) });
+}
+function getJobs(githubToken, owner, repo, runId, indicatorLookup, exclusionSuffix) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const octokit = github.getOctokit(githubToken);
+        const { data: { jobs: oJobs } } = yield octokit.rest.actions.listJobsForWorkflowRun({
+            owner,
+            repo,
+            run_id: runId
+        });
+        const filtered = exclusionSuffix
+            ? oJobs.filter(j => !j.name.endsWith(exclusionSuffix))
+            : oJobs;
+        return filtered.map(j => makeJob(j, indicatorLookup));
+    });
+}
+exports.getJobs = getJobs;
+
+
+/***/ }),
+
 /***/ 3109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -44,118 +263,51 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
 const template_1 = __nccwpck_require__(5032);
 const web_api_1 = __nccwpck_require__(431);
-const parsers_1 = __nccwpck_require__(8055);
-function hasPR(payload) {
-    return payload.pull_request !== undefined && payload.pull_request !== null;
-}
-function getInput(name, opts, defaultValue) {
-    const input = core.getInput(name, opts);
-    if (defaultValue !== undefined &&
-        (input === null || input === undefined || input.trim() === '')) {
-        return defaultValue;
-    }
-    return input;
+const assembler_1 = __nccwpck_require__(7071);
+const jobs_1 = __nccwpck_require__(3597);
+function isActionError(obj) {
+    return (obj.__error === true &&
+        typeof obj.message === 'string');
 }
 function run() {
-    var _a, _b;
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const botToken = getInput('botToken', { required: true });
-            const channelId = getInput('channelId', { required: true });
-            const messageId = getInput('messageId', { required: false });
-            const status = getInput('status', { required: false });
-            const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
-            const templateFile = getInput('templateFile', { required: true });
-            const completedPhases = parsers_1.parseList(core.getInput('completedPhases', { required: false }));
-            const pendingPhases = parsers_1.parseList(core.getInput('pendingPhases', { required: false }));
-            const currentPhase = getInput('currentPhase', { required: false });
-            const currentPhaseIndicator = getInput('currentPhaseIndicator', {
-                required: false
-            }, ':hourglass:');
-            const pendingPhaseIndicator = getInput('pendingPhaseIndicator', {
-                required: false
-            }, ':double_vertical_bar:');
-            const completedPhaseIndicator = getInput('completedPhaseIndicator', {
-                required: false
-            }, ':white_check_mark:');
-            const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
-            let params;
-            if (parsers_1.isMultiVars(rawParams)) {
-                params = rawParams;
-            }
-            else {
-                core.setFailed(rawParams.reduce((msg, err) => `${msg}\n${err.message}`, ''));
+            const inputContext = assembler_1.processInput();
+            if (isActionError(inputContext)) {
+                core.setFailed(inputContext.message);
                 return;
             }
-            const { repo: repoFull, payload, ref, workflow, eventName } = github.context;
-            const { owner, repo } = repoFull;
-            const branch = hasPR(payload)
-                ? payload.pull_request.head.ref
-                : ref.replace('refs/heads/', '');
-            const sha = hasPR(payload)
-                ? payload.pull_request.head.sha
-                : github.context.sha;
-            const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare;
-            const source = hasPR(payload) ? payload.pull_request.title : branch;
-            const url = hasPR(payload)
-                ? payload.pull_request.html_url
-                : payload.head_commit.url;
-            const commitMessage = hasPR(payload)
-                ? payload.pull_request.body
-                : payload.head_commit.message;
-            const user = (_b = (_a = payload.sender) === null || _a === void 0 ? void 0 : _a.login) !== null && _b !== void 0 ? _b : owner;
-            const thisPhase = currentPhase.trim() === ''
-                ? []
-                : [{ name: currentPhase, indicator: currentPhaseIndicator }];
-            const phases = [
-                ...completedPhases.map(ph => ({
-                    name: ph,
-                    indicator: completedPhaseIndicator
-                })),
-                ...thisPhase,
-                ...pendingPhases.map(ph => ({
-                    name: ph,
-                    indicator: pendingPhaseIndicator
-                }))
-            ];
-            const gh = {
-                diff,
-                owner,
-                repo,
-                sha,
-                branch,
-                event: eventName,
-                source,
-                url,
-                commitMessage,
-                user
-            };
-            const contextVars = {
-                workflow,
-                gh,
-                phases,
-                status
-            };
-            // Load template file
-            const vars = Object.assign({ params: params.variables }, contextVars);
-            const message = yield template_1.renderTemplate(templateFile, vars);
-            if (!message) {
-                core.setFailed(`Cannot render template {templateFile}`);
-                return;
-            }
-            const blocks = JSON.parse(message).blocks;
             const postArgs = {
-                channel: channelId,
-                blocks,
-                text: status,
+                channel: inputContext.channelId,
+                text: inputContext.status,
                 unfurl_links: false,
                 unfurl_media: false
             };
-            const updateArgs = Object.assign(Object.assign({}, postArgs), { ts: messageId !== null && messageId !== void 0 ? messageId : '' });
-            const slack = new web_api_1.WebClient(botToken);
+            if (inputContext.templateFile) {
+                const githubContext = assembler_1.processGithubContext();
+                const jobs = yield jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.exclusionSuffix);
+                const contextVars = {
+                    gh: githubContext,
+                    status: inputContext.status,
+                    jobs
+                };
+                // Load template file
+                const vars = Object.assign({ params: inputContext.params }, contextVars);
+                const message = yield template_1.renderTemplate(inputContext.templateFile, vars);
+                if (!message) {
+                    core.setFailed(`Cannot render template ${inputContext.templateFile}`);
+                    return;
+                }
+                core.info(message);
+                postArgs.blocks = JSON.parse(message).blocks;
+            }
+            const updateArgs = Object.assign(Object.assign({}, postArgs), { ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' });
+            const slack = new web_api_1.WebClient(inputContext.botToken);
+            const messageId = inputContext.messageId;
+            const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
             const response = isUpdate
                 ? yield slack.chat.update(updateArgs)
                 : yield slack.chat.postMessage(postArgs);
@@ -3738,7 +3890,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.4.2";
+const VERSION = "5.5.0";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};

@@ -4,7 +4,7 @@
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": ":flying_saucer: <%= it.workflow %>",
+                "text": ":flying_saucer: <%= it.gh.workflow %>",
                 "emoji": true
             }
         },
@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _<%= it.gh.event %>_ => *<%= it.gh.source %>* by _@<%= it.gh.user %>_"
+                    "text": "On _<%= it.gh.eventName %>_ => *<%= it.gh.eventSource %>* by _@<%= it.gh.user %>_"
                 }
             ]
         },
@@ -24,7 +24,7 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<<%= it.gh.url %> | <%= it.gh.commitMessage %>>"
+                "text": "<<%= it.gh.links.eventSource %> | <%= it.gh.description %>>"
             }
         },
         {
@@ -37,16 +37,31 @@
                 "text": "<%= it.status %>"
             }
         },
-        <% it.phases.forEach(function(step) { %>
+        <% it.jobs.forEach(function(job) { %>
         {
             "type": "context",
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<%= step.indicator %> <%= step.name %>"
+                    "text": "<%= job.indicator %> <%= job.name %>"
                 }
             ]
         },
+        <% if (job.status === "running") { %>
+        <% job.steps.forEach(function(step) { %>
+        <% if (step.name) { %>
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "　　　　<%= step.indicator %> <%= step.name %>"
+                }
+            ]
+        },
+        <% } %>
+        <% }) %> 
+        <% } %>
         <% }) %>
         {
             "type": "divider"
@@ -56,19 +71,19 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<http://github.com | <%= it.params.GHL %>>"
+                    "text": "<<%= it.gh.links.workflow %> | Workflow>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://google.com | <%= it.params.GGL %>>"
+                    "text": "<<%= it.gh.links.diff %> | Diff>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://apple.com | <%= it.params.APL %>>"
+                    "text": "<<%= it.gh.links.eventSource %> | Source(<%= it.gh.eventSource %>)>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://microsoft.com | <%= it.params.MSL %>>"
+                    "text": "<<%= it.params.link1 %> | <%= it.params.name1 %>>"
                 }
             ]
         }
