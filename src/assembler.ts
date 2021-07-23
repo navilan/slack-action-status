@@ -58,6 +58,8 @@ interface AssembledInput {
   params: KVP
   indicators: Indicators
   inclusionSuffix?: string
+  forceFailure: boolean
+  forceSuccess: boolean
 }
 
 export function processInput(): AssembledInput | ActionError {
@@ -70,6 +72,8 @@ export function processInput(): AssembledInput | ActionError {
   const inclusionSuffix = getInput('inclusionSuffix', {required: false})
   const templateFile = getInput('templateFile', {required: false})
   const rawParams = parseMultiLineKVP(getInput('params', {required: false}))
+  const forceFailure = getInput('forceFailure', {required: false}) === 'true'
+  const forceSuccess = getInput('forceSuccess', {required: false}) === 'true'
   let params
   if (isMultiVars(rawParams)) {
     params = rawParams
@@ -100,7 +104,9 @@ export function processInput(): AssembledInput | ActionError {
     status,
     params: params.variables,
     indicators,
-    inclusionSuffix
+    inclusionSuffix,
+    forceFailure,
+    forceSuccess
   }
 }
 
@@ -126,8 +132,10 @@ export function processGithubContext(): SourceContext {
   const user = payload.sender?.login ?? owner
   const runId = github.context.runId
   const workflowUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`
+  const currentJobId = github.context.job
   return {
     runId,
+    currentJobId,
     links: {
       diff,
       eventSource: url,

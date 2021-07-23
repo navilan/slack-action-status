@@ -35,10 +35,13 @@ interface SlackActionStatusInput {
   messageId?: string
   templateFile?: string
   inclusionSuffix?: string
+  forceFailure?: boolean
+  forceSuccess?: boolean
 }
 
 export interface SourceContext {
   runId: number
+  currentJobId: string
   links: {
     diff: string
     eventSource: string

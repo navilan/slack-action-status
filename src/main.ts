@@ -37,6 +37,17 @@ async function run(): Promise<void> {
         (status: PhaseStatus) => inputContext.indicators[status] ?? '',
         inputContext.inclusionSuffix
       )
+      if (inputContext.forceFailure || inputContext.forceSuccess) {
+        const jobStatus: PhaseStatus = inputContext.forceFailure
+          ? 'failed'
+          : 'completed'
+        const jobIndicator = inputContext.indicators[jobStatus]
+        const currentJob = jobs.find(j => j.name === githubContext.currentJobId)
+        if (currentJob) {
+          currentJob.indicator = jobIndicator
+          currentJob.status = jobStatus
+        }
+      }
       const contextVars = {
         gh: githubContext,
         status: inputContext.status,
@@ -52,7 +63,6 @@ async function run(): Promise<void> {
       postArgs.blocks = JSON.parse(message).blocks
     }
     const updateArgs = {...postArgs, ts: inputContext.messageId ?? ''}
-    core.info(JSON.stringify(updateArgs))
     const slack = new WebClient(inputContext.botToken)
     const messageId = inputContext.messageId
     const isUpdate =
@@ -60,7 +70,6 @@ async function run(): Promise<void> {
     const response = isUpdate
       ? await slack.chat.update(updateArgs)
       : await slack.chat.postMessage(postArgs)
-    core.info(`message_id: ${response.ts}`)
     core.setOutput('message_id', response.ts)
   } catch (error) {
     core.setFailed(error)

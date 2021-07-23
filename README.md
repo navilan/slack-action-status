@@ -33,7 +33,6 @@ with:
 
     `${{ secrets.GITHUB_TOKEN }}`. This is used to get the running jobs and steps from the octokit API.
 
-
 * **botToken** (Required)
 
    [Slack documentation](https://api.slack.com/authentication/token-types#bot) on how to setup your app and get the bot token.
@@ -104,6 +103,22 @@ with:
 * **messageId** (Optional)
 
     A slack message that needs to be updated. If this is not provided, a new message is created.
+
+---
+
+* **forceSuccess** (Optional)
+
+    Forces the current job status to be a success regardless of the API result. This can be used in the
+    final action to indicate workflow completion.
+
+    **Important**: If you are using this parameter, ensure that you do not give your job a descriptive name.
+
+* **forceFailure** (Optional)
+
+    Forces the current job status to be a failure regardless of the API result. This can be used in the
+    final action to indicate workflow completion.
+
+    **Important**: If you are using this parameter, ensure that you do not give your job a descriptive name.
 
 ## Template Context Variables {#vars}
 

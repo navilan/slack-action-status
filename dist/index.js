@@ -67,6 +67,8 @@ function processInput() {
     const inclusionSuffix = getInput('inclusionSuffix', { required: false });
     const templateFile = getInput('templateFile', { required: false });
     const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
+    const forceFailure = getInput('forceFailure', { required: false }) === 'true';
+    const forceSuccess = getInput('forceSuccess', { required: false }) === 'true';
     let params;
     if (parsers_1.isMultiVars(rawParams)) {
         params = rawParams;
@@ -91,7 +93,9 @@ function processInput() {
         status,
         params: params.variables,
         indicators,
-        inclusionSuffix
+        inclusionSuffix,
+        forceFailure,
+        forceSuccess
     };
 }
 exports.processInput = processInput;
@@ -118,8 +122,10 @@ function processGithubContext() {
     const user = (_b = (_a = payload.sender) === null || _a === void 0 ? void 0 : _a.login) !== null && _b !== void 0 ? _b : owner;
     const runId = github.context.runId;
     const workflowUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+    const currentJobId = github.context.job;
     return {
         runId,
+        currentJobId,
         links: {
             diff,
             eventSource: url,
@@ -204,6 +210,7 @@ function makeJob(job, indicatorLookup, inclusionSuffix) {
         ...makePhase(job, indicatorLookup),
         steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : [])
             .filter(s => !inclusionSuffix || s.name.endsWith(inclusionSuffix))
+            .map(s => inclusionSuffix ? { ...s, name: s.name.replace(inclusionSuffix, '') } : s)
             .map(s => makePhase(s, indicatorLookup))
     };
 }
@@ -272,6 +279,17 @@ async function run() {
         if (inputContext.templateFile) {
             const githubContext = assembler_1.processGithubContext();
             const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.inclusionSuffix);
+            if (inputContext.forceFailure || inputContext.forceSuccess) {
+                const jobStatus = inputContext.forceFailure
+                    ? 'failed'
+                    : 'completed';
+                const jobIndicator = inputContext.indicators[jobStatus];
+                const currentJob = jobs.find(j => j.name === githubContext.currentJobId);
+                if (currentJob) {
+                    currentJob.indicator = jobIndicator;
+                    currentJob.status = jobStatus;
+                }
+            }
             const contextVars = {
                 gh: githubContext,
                 status: inputContext.status,
@@ -287,14 +305,12 @@ async function run() {
             postArgs.blocks = JSON.parse(message).blocks;
         }
         const updateArgs = { ...postArgs, ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' };
-        core.info(JSON.stringify(updateArgs));
         const slack = new web_api_1.WebClient(inputContext.botToken);
         const messageId = inputContext.messageId;
         const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
         const response = isUpdate
             ? await slack.chat.update(updateArgs)
             : await slack.chat.postMessage(postArgs);
-        core.info(`message_id: ${response.ts}`);
         core.setOutput('message_id', response.ts);
     }
     catch (error) {
