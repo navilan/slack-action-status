@@ -77,7 +77,7 @@ function processInput() {
     const rawIndicators = parsers_1.parseMultiLineKVP(getInput('indicators', { required: false }));
     let indicators;
     if (parsers_1.isMultiVars(rawIndicators)) {
-        indicators = Object.assign(Object.assign({}, defaultIndicators), rawIndicators.variables);
+        indicators = { ...defaultIndicators, ...rawIndicators.variables };
     }
     else {
         return parsers_1.actionError(rawIndicators.reduce((msg, err) => `${msg}\n${err.message}`, ''));
@@ -105,7 +105,9 @@ function processGithubContext() {
     const sha = hasPR(payload)
         ? payload.pull_request.head.sha
         : github.context.sha;
-    const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare;
+    const diff = hasPR(payload)
+        ? `${payload.pull_request._links.html}/files`
+        : payload.compare;
     const source = hasPR(payload) ? payload.pull_request.title : branch;
     const url = hasPR(payload)
         ? payload.pull_request.html_url
@@ -163,15 +165,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getJobs = void 0;
 const github = __importStar(__nccwpck_require__(5438));
@@ -207,21 +200,22 @@ function makePhase(obj, indicatorLookup) {
 }
 function makeJob(job, indicatorLookup) {
     var _a;
-    return Object.assign(Object.assign({}, makePhase(job, indicatorLookup)), { steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : []).map(s => makePhase(s, indicatorLookup)) });
+    return {
+        ...makePhase(job, indicatorLookup),
+        steps: ((_a = job.steps) !== null && _a !== void 0 ? _a : []).map(s => makePhase(s, indicatorLookup))
+    };
 }
-function getJobs(githubToken, owner, repo, runId, indicatorLookup, exclusionSuffix) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github.getOctokit(githubToken);
-        const { data: { jobs: oJobs } } = yield octokit.rest.actions.listJobsForWorkflowRun({
-            owner,
-            repo,
-            run_id: runId
-        });
-        const filtered = exclusionSuffix
-            ? oJobs.filter(j => !j.name.endsWith(exclusionSuffix))
-            : oJobs;
-        return filtered.map(j => makeJob(j, indicatorLookup));
+async function getJobs(githubToken, owner, repo, runId, indicatorLookup, exclusionSuffix) {
+    const octokit = github.getOctokit(githubToken);
+    const { data: { jobs: oJobs } } = await octokit.rest.actions.listJobsForWorkflowRun({
+        owner,
+        repo,
+        run_id: runId
     });
+    const filtered = exclusionSuffix
+        ? oJobs.filter(j => !j.name.endsWith(exclusionSuffix))
+        : oJobs;
+    return filtered.map(j => makeJob(j, indicatorLookup));
 }
 exports.getJobs = getJobs;
 
@@ -252,15 +246,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const template_1 = __nccwpck_require__(5032);
@@ -271,52 +256,50 @@ function isActionError(obj) {
     return (obj.__error === true &&
         typeof obj.message === 'string');
 }
-function run() {
+async function run() {
     var _a;
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const inputContext = assembler_1.processInput();
-            if (isActionError(inputContext)) {
-                core.setFailed(inputContext.message);
+    try {
+        const inputContext = assembler_1.processInput();
+        if (isActionError(inputContext)) {
+            core.setFailed(inputContext.message);
+            return;
+        }
+        const postArgs = {
+            channel: inputContext.channelId,
+            text: inputContext.status,
+            unfurl_links: false,
+            unfurl_media: false
+        };
+        if (inputContext.templateFile) {
+            const githubContext = assembler_1.processGithubContext();
+            const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.exclusionSuffix);
+            core.info(JSON.stringify(jobs));
+            const contextVars = {
+                gh: githubContext,
+                status: inputContext.status,
+                jobs
+            };
+            // Load template file
+            const vars = { params: inputContext.params, ...contextVars };
+            const message = await template_1.renderTemplate(inputContext.templateFile, vars);
+            if (!message) {
+                core.setFailed(`Cannot render template ${inputContext.templateFile}`);
                 return;
             }
-            const postArgs = {
-                channel: inputContext.channelId,
-                text: inputContext.status,
-                unfurl_links: false,
-                unfurl_media: false
-            };
-            if (inputContext.templateFile) {
-                const githubContext = assembler_1.processGithubContext();
-                const jobs = yield jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.exclusionSuffix);
-                const contextVars = {
-                    gh: githubContext,
-                    status: inputContext.status,
-                    jobs
-                };
-                // Load template file
-                const vars = Object.assign({ params: inputContext.params }, contextVars);
-                const message = yield template_1.renderTemplate(inputContext.templateFile, vars);
-                if (!message) {
-                    core.setFailed(`Cannot render template ${inputContext.templateFile}`);
-                    return;
-                }
-                core.info(message);
-                postArgs.blocks = JSON.parse(message).blocks;
-            }
-            const updateArgs = Object.assign(Object.assign({}, postArgs), { ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' });
-            const slack = new web_api_1.WebClient(inputContext.botToken);
-            const messageId = inputContext.messageId;
-            const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
-            const response = isUpdate
-                ? yield slack.chat.update(updateArgs)
-                : yield slack.chat.postMessage(postArgs);
-            core.setOutput('message_id', response.ts);
+            postArgs.blocks = JSON.parse(message).blocks;
         }
-        catch (error) {
-            core.setFailed(error);
-        }
-    });
+        const updateArgs = { ...postArgs, ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' };
+        const slack = new web_api_1.WebClient(inputContext.botToken);
+        const messageId = inputContext.messageId;
+        const isUpdate = messageId !== null && messageId !== undefined && messageId !== '';
+        const response = isUpdate
+            ? await slack.chat.update(updateArgs)
+            : await slack.chat.postMessage(postArgs);
+        core.setOutput('message_id', response.ts);
+    }
+    catch (error) {
+        core.setFailed(error);
+    }
 }
 run();
 
@@ -340,7 +323,7 @@ exports.multiVars = multiVars;
 function multiVarMerge(left, right) {
     return {
         __error: false,
-        variables: Object.assign(Object.assign({}, left.variables), right.variables)
+        variables: { ...left.variables, ...right.variables }
     };
 }
 exports.multiVarMerge = multiVarMerge;
@@ -415,25 +398,45 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.renderTemplate = void 0;
+exports.renderTemplate = exports.escapeLineBreaks = void 0;
 const Eta = __importStar(__nccwpck_require__(5154));
 const Path = __importStar(__nccwpck_require__(5622));
-function renderTemplate(file, vars) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const config = Eta.getConfig({});
-        const message = yield Eta.renderFileAsync(Path.resolve(file), vars, config);
-        return message;
-    });
+function escapeLineBreaks(obj) {
+    const escape = (val) => val.replace(/\r*\n/g, '\\n');
+    const isString = (val) => typeof val === 'string';
+    const isArray = (val) => typeof val === 'object' && Array.isArray(val);
+    const isObject = (val) => typeof val === 'object' && !Array.isArray(val);
+    const escapeVal = (value) => {
+        let escaped;
+        if (isString(value)) {
+            escaped = escape(value);
+        }
+        else if (isArray(value)) {
+            escaped = value.map(escapeVal);
+        }
+        else if (isObject(value)) {
+            escaped = escapeValues(value);
+        }
+        else {
+            escaped = value;
+        }
+        return escaped;
+    };
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    const escapeValues = (val) => !isObject(val)
+        ? val
+        : Object.fromEntries(Object.entries(val).reduce((result, [key, value]) => {
+            result.push([key, escapeVal(value)]);
+            return result;
+        }, []));
+    return escapeValues(obj);
+}
+exports.escapeLineBreaks = escapeLineBreaks;
+async function renderTemplate(file, vars) {
+    const config = Eta.getConfig({ autoEscape: false, autoTrim: false });
+    const message = await Eta.renderFileAsync(Path.resolve(file), escapeLineBreaks(vars), config);
+    return message;
 }
 exports.renderTemplate = renderTemplate;
 

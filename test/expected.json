@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _push_ => *main* by _@navilan_"
+                    "text": "On _push_ :point_right: *main* by _@navilan_"
                 }
             ]
         },
@@ -24,7 +24,7 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<https://github.com | Add simple block templating>"
+                "text": "- Use the octokit API to get the job and step statuses(#11)\n- Add example for passing slack message id between jobs(#8)\n- Refactor code for better modularity(#10)\n - Improve Readme a bit.\n"
             }
         },
         {
@@ -152,7 +152,7 @@
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<https://github.com | Source(main)>"
+                    "text": "<https://github.com | Source>"
                 },
                 {
                     "type": "mrkdwn",
