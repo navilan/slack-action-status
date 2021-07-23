@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _<%= it.gh.eventName %>_ => *<%= it.gh.eventSource %>* by _@<%= it.gh.user %>_"
+                    "text": "On _<%= it.gh.eventName %>_ :point_right: *<%= it.gh.eventSource %>* by _@<%= it.gh.user %>_"
                 }
             ]
         },
@@ -24,7 +24,7 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<<%= it.gh.links.eventSource %> | <%= it.gh.description %>>"
+                "text": "<%= it.gh.description %>"
             }
         },
         {
@@ -79,7 +79,7 @@
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<<%= it.gh.links.eventSource %> | Source(<%= it.gh.eventSource %>)>"
+                    "text": "<<%= it.gh.links.eventSource %> | Source>"
                 },
                 {
                     "type": "mrkdwn",

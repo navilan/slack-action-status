@@ -20,7 +20,8 @@ const vars: TemplateVars = {
     branch: 'main',
     eventName: 'push',
     eventSource: 'main',
-    description: 'Add simple block templating',
+    description:
+      '- Use the octokit API to get the job and step statuses(#11)\r\n- Add example for passing slack message id between jobs(#8)\n- Refactor code for better modularity(#10)\r\n - Improve Readme a bit.\r\n',
     user: 'navilan'
   },
   jobs: [

@@ -113,7 +113,9 @@ export function processGithubContext(): SourceContext {
   const sha = hasPR(payload)
     ? payload.pull_request.head.sha
     : github.context.sha
-  const diff = hasPR(payload) ? payload.pull_request.compare : payload.compare
+  const diff = hasPR(payload)
+    ? `${payload.pull_request._links.html}/files`
+    : payload.compare
   const source = hasPR(payload) ? payload.pull_request.title : branch
   const url = hasPR(payload)
     ? payload.pull_request.html_url

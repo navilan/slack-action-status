@@ -37,6 +37,7 @@ async function run(): Promise<void> {
         (status: PhaseStatus) => inputContext.indicators[status] ?? '',
         inputContext.exclusionSuffix
       )
+      core.info(JSON.stringify(jobs))
       const contextVars = {
         gh: githubContext,
         status: inputContext.status,
@@ -49,7 +50,6 @@ async function run(): Promise<void> {
         core.setFailed(`Cannot render template ${inputContext.templateFile}`)
         return
       }
-      core.info(message)
       postArgs.blocks = JSON.parse(message).blocks
     }
     const updateArgs = {...postArgs, ts: inputContext.messageId ?? ''}
