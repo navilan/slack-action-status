@@ -16,18 +16,15 @@ export function multiVars(key: string, value: string): MultiVars {
     variables: {[key]: value}
   }
 }
-
 export function multiVarMerge(left: MultiVars, right: MultiVars): MultiVars {
   return {
     __error: false,
     variables: {...left.variables, ...right.variables}
   }
 }
-
 export function actionError(message: string): ActionError {
   return {__error: true, message}
 }
-
 export const empty: MultiVars = {__error: false, variables: {}}
 
 const kvpRegEx = /\s*-\s*(?<key>[^:]+):\s*(?<value>.+)/

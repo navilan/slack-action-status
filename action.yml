@@ -5,6 +5,9 @@ branding:
   icon: bell
   color: yellow 
 inputs:
+  githubToken: 
+    required: true
+    description: "Use secrets.GITHUB_TOKEN" 
   botToken: 
     required: true
     description: Slack APP Bot Token
@@ -15,32 +18,20 @@ inputs:
     required: false
     description: Slack Message ID for updates
   templateFile: 
-    required: true
+    required: false
     description: Message template using the Slack Blocks Spec
   status: 
     required: true
     description: Status of the build as of now
-  completedPhases: 
+  indicators:
     required: false
-    description: What phases of the build are complete?
-  currentPhase:
-    required: false
-    description: What is the current phase
-  pendingPhases: 
-    required: false
-    description: What phases of the build are still pending?
-  completedPhaseIndicator: 
-    required: false
-    description: Emoji or text to indicate a completed phase
-  currentPhaseIndicator: 
-    required: false
-    description: Emoji or text to indicate the current phase
-  pendingPhaseIndicator: 
-    required: false
-    description: Emoji or text to indicate a pending phase
+    description: "Status indicators as string in '- <key>: <value>' format"
   params:
     required: false
     description: "Additional parameters as string in '- <key>: <value>' format"
+  excludeStepSuffix: 
+    required: false
+    description: Suffix that marks a step to be excluded
 runs:
   using: 'node12'
   main: 'dist/index.js'

@@ -42,6 +42,24 @@
             "elements": [
                 {
                     "type": "mrkdwn",
+                    "text": ":white_check_mark: Slack"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":white_medium_square: PROnly"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
                     "text": ":white_check_mark: Setup"
                 }
             ]
@@ -51,7 +69,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": ":white_check_mark:  Build"
+                    "text": ":white_check_mark: Prepare"
                 }
             ]
         },
@@ -69,7 +87,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": ":double_vertical_bar: Setup"
+                    "text": "　　　　:white_check_mark: lint"
                 }
             ]
         },
@@ -78,7 +96,43 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": ":double_vertical_bar:  Build"
+                    "text": "　　　　:hourglass: unit tests"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "　　　　:double_vertical_bar: integration tests"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "　　　　:hash: e2e"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":double_vertical_bar: Build Images"
+                }
+            ]
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":hash: Publish"
                 }
             ]
         },
@@ -90,19 +144,19 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<http://github.com | Github>"
+                    "text": "<https://github.com/navilan/slack-action-status | Workflow>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://google.com | Google>"
+                    "text": "<https://github.com/navilan/slack-action-status/compare/aa6be6db2eef...80c99e0fbb1f | Diff>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://apple.com | Apple>"
+                    "text": "<https://github.com | Source(main)>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<http://microsoft.com | Microsoft>"
+                    "text": "<https://github.com | Github>"
                 }
             ]
         }
