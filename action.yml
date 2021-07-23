@@ -1,5 +1,5 @@
 name: 'Slack Action Status'
-description: 'Github Action to Notify Slack using a message template'
+description: 'Github action to notify Slack using a message template'
 author: 'navilan'
 branding: 
   icon: bell
@@ -14,24 +14,24 @@ inputs:
   channelId: 
     required: true
     description: Slack Channel ID
+  status: 
+    required: true
+    description: Status of the build as of now
+  params:
+    required: false
+    description: "Additional parameters as string in '- <key>: <value>' format"
+  indicators:
+    required: false
+    description: "Status indicators as string in '- <key>: <value>' format"
   messageId: 
     required: false
     description: Slack Message ID for updates
   templateFile: 
     required: false
-    description: Message template using the Slack Blocks Spec
-  status: 
-    required: true
-    description: Status of the build as of now
-  indicators:
+    description: Message template using Slack Blocks Kit
+  inclusionSuffix: 
     required: false
-    description: "Status indicators as string in '- <key>: <value>' format"
-  params:
-    required: false
-    description: "Additional parameters as string in '- <key>: <value>' format"
-  excludeStepSuffix: 
-    required: false
-    description: Suffix that marks a step to be excluded
+    description: Suffix that marks a step to be included in the message
 runs:
   using: 'node12'
   main: 'dist/index.js'
