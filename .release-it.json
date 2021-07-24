@@ -1,0 +1,23 @@
+{
+    "plugins": {
+        "@release-it/conventional-changelog": {
+            "preset": "angular",
+            "infile": "CHANGELOG.md"
+        }
+    },
+    "git": {
+        "requiredBranch": "main",
+        "requireCommits": true,
+        "commitMessage": "chore: release ${version}"
+    },
+    "github": {
+        "release": true,
+        "draft": true
+    },
+    "npm": {
+        "publish": false
+    },
+    "hooks": {
+        "before:init": ["yarn all"]
+    }
+}

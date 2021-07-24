@@ -101,3 +101,6 @@ lib/**/*
 #IDE
 .history
 test-data
+
+#env
+.env.env
