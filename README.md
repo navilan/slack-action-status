@@ -49,7 +49,7 @@ with:
 
 * **templateFile** (Optional)
 
-   You can use [slack block kit](https://api.slack.com/block-kit) to create a message template. [eta template engine](https://eta.js.org/) in its default configuration is used to generate the message. [These variables](#vars) are available in the `it` context of the template.
+   You can use [slack block kit](https://api.slack.com/block-kit) to create a message template. [eta template engine](https://eta.js.org/) in its default configuration is used to generate the message. These variables(see below) are available in the `it` context of the template.
 
    View the [template used by this repository](.github/workflows/slack-blocks.json.eta).
 
@@ -113,6 +113,8 @@ with:
 
     **Important**: If you are using this parameter, ensure that you do not give your job a descriptive name.
 
+---
+
 * **forceFailure** (Optional)
 
     Forces the current job status to be a failure regardless of the API result. This can be used in the
@@ -120,7 +122,7 @@ with:
 
     **Important**: If you are using this parameter, ensure that you do not give your job a descriptive name.
 
-## Template Context Variables {#vars}
+## Template Context Variables
 
 The context variables are well typed. They can be accessed through the default template root variable `it`.
 
