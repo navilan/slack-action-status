@@ -111,6 +111,7 @@ export function processInput(): AssembledInput | ActionError {
 }
 
 export function processGithubContext(): SourceContext {
+  core.info(JSON.stringify(github))
   const {repo: repoFull, payload, ref, workflow, eventName} = github.context
   const {owner, repo} = repoFull
   const branch = hasPR(payload)
