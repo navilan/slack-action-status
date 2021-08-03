@@ -27,10 +27,10 @@
                 "text": "<%= it.source.message %>"
             }
         },
+        <% if(it.source.pr) {%>
         {
             "type": "divider"
         },
-        <% if(it.source.pr) {%>
         {
             "type": "section",
             "text": {
@@ -49,10 +49,10 @@
             ]
         },
         <% } %>
-        <% } %>
         {
             "type": "divider"
         },
+        <% } %>
         {
             "type": "section",
             "text": {

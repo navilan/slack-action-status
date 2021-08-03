@@ -25,3 +25,27 @@ jobs:
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
           sourceSHA:  ${{ github.event.client_payload.sha }}
+      - uses: ./
+        if: failure()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ steps.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "FAILED"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceFailure: true
+      - uses: ./
+        if: success()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ steps.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "SUCCESS"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceSuccess: true
