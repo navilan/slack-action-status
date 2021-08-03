@@ -9,6 +9,9 @@
             }
         },
         {
+            "type": "divider"
+        },
+        {
             "type": "context",
             "elements": [
                 {
@@ -28,9 +31,6 @@
             "type": "divider"
         },
         <% if(it.source.pr) {%>
-        {
-            "type": "divider"
-        },
         {
             "type": "section",
             "text": {

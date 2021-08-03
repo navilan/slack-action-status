@@ -103,7 +103,6 @@ function processInput() {
 }
 exports.processInput = processInput;
 function processWorkflowContext() {
-    core.info(JSON.stringify(github.context));
     const { repo: repoFull, workflow } = github.context;
     const { owner, repo } = repoFull;
     const runId = github.context.runId;
