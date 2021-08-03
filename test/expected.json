@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _push_ :point_right: *main* by _@navilan_"
+                    "text": "On commit to *main* by _@navilan_"
                 }
             ]
         },
@@ -26,6 +26,25 @@
                 "type": "mrkdwn",
                 "text": "- Use the octokit API to get the job and step statuses(#11)\n- Add example for passing slack message id between jobs(#8)\n- Refactor code for better modularity(#10)\n - Improve Readme a bit.\n"
             }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Linked Pull Request*\n New PR"
+            }
+        },
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "Awesome changes"
+                }
+            ]
         },
         {
             "type": "divider"
@@ -148,11 +167,11 @@
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<https://github.com/navilan/slack-action-status/compare/aa6be6db2eef...80c99e0fbb1f | Diff>"
+                    "text": "<https://github.com/commits | Commit>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<https://github.com | Source>"
+                    "text": "<https://github.com/pulls | Pull Request>"
                 },
                 {
                     "type": "mrkdwn",

@@ -34,10 +34,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.processGithubContext = exports.processInput = void 0;
+exports.processSourceContext = exports.processWorkflowContext = exports.processInput = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const parsers_1 = __nccwpck_require__(8055);
+const source_1 = __nccwpck_require__(8330);
 function hasPR(payload) {
     return payload.pull_request !== undefined && payload.pull_request !== null;
 }
@@ -69,6 +70,7 @@ function processInput() {
     const rawParams = parsers_1.parseMultiLineKVP(getInput('params', { required: false }));
     const forceFailure = getInput('forceFailure', { required: false }) === 'true';
     const forceSuccess = getInput('forceSuccess', { required: false }) === 'true';
+    const sourceSHA = getInput('sourceSHA', { required: false });
     let params;
     if (parsers_1.isMultiVars(rawParams)) {
         params = rawParams;
@@ -92,6 +94,7 @@ function processInput() {
         messageId,
         status,
         params: params.variables,
+        sourceSHA,
         indicators,
         inclusionSuffix,
         forceFailure,
@@ -99,50 +102,36 @@ function processInput() {
     };
 }
 exports.processInput = processInput;
-function processGithubContext() {
-    var _a, _b;
-    const { repo: repoFull, payload, ref, workflow, eventName } = github.context;
+function processWorkflowContext() {
+    core.info(JSON.stringify(github.context));
+    const { repo: repoFull, workflow } = github.context;
     const { owner, repo } = repoFull;
-    const branch = hasPR(payload)
-        ? payload.pull_request.head.ref
-        : ref.replace('refs/heads/', '');
-    const sha = hasPR(payload)
-        ? payload.pull_request.head.sha
-        : github.context.sha;
-    const diff = hasPR(payload)
-        ? `${payload.pull_request._links.html.href}/files`
-        : payload.compare;
-    const source = hasPR(payload) ? payload.pull_request.title : branch;
-    const url = hasPR(payload)
-        ? payload.pull_request.html_url
-        : payload.head_commit.url;
-    const description = hasPR(payload)
-        ? payload.pull_request.body
-        : payload.head_commit.message;
-    const user = (_b = (_a = payload.sender) === null || _a === void 0 ? void 0 : _a.login) !== null && _b !== void 0 ? _b : owner;
     const runId = github.context.runId;
     const workflowUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
     const currentJobId = github.context.job;
     return {
         runId,
         currentJobId,
-        links: {
-            diff,
-            eventSource: url,
-            workflow: workflowUrl
-        },
-        workflow,
-        owner,
-        repo,
-        sha,
-        branch,
-        eventSource: source,
-        eventName,
-        description,
-        user
+        name: workflow,
+        url: workflowUrl
     };
 }
-exports.processGithubContext = processGithubContext;
+exports.processWorkflowContext = processWorkflowContext;
+async function processSourceContext(inputContext) {
+    var _a;
+    const { owner, repo } = github.context.repo;
+    const { payload, ref } = github.context;
+    const branch = hasPR(payload)
+        ? payload.pull_request.head.ref
+        : ref.replace('refs/heads/', '');
+    const sha = hasPR(payload)
+        ? payload.pull_request.head.sha
+        : github.context.sha;
+    const shaInput = ((_a = inputContext.sourceSHA) !== null && _a !== void 0 ? _a : '').trim();
+    const sourceContext = await source_1.getSourceContext(inputContext.githubToken, owner, repo, shaInput === '' ? sha : shaInput, branch);
+    return sourceContext;
+}
+exports.processSourceContext = processSourceContext;
 
 
 /***/ }),
@@ -277,32 +266,34 @@ async function run() {
             unfurl_media: false
         };
         if (inputContext.templateFile) {
-            const githubContext = assembler_1.processGithubContext();
-            const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, githubContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.inclusionSuffix);
+            const workflowContext = assembler_1.processWorkflowContext();
+            const githubContext = await assembler_1.processSourceContext(inputContext);
+            const jobs = await jobs_1.getJobs(inputContext.githubToken, githubContext.owner, githubContext.repo, workflowContext.runId, (status) => { var _a; return (_a = inputContext.indicators[status]) !== null && _a !== void 0 ? _a : ''; }, inputContext.inclusionSuffix);
             if (inputContext.forceFailure || inputContext.forceSuccess) {
                 const jobStatus = inputContext.forceFailure
                     ? 'failed'
                     : 'completed';
                 const jobIndicator = inputContext.indicators[jobStatus];
-                const currentJob = jobs.find(j => j.name === githubContext.currentJobId);
+                const currentJob = jobs.find(j => j.name === workflowContext.currentJobId);
                 if (currentJob) {
                     currentJob.indicator = jobIndicator;
                     currentJob.status = jobStatus;
                 }
             }
-            const contextVars = {
-                gh: githubContext,
+            const vars = {
+                params: inputContext.params,
+                workflow: workflowContext,
+                source: githubContext,
                 status: inputContext.status,
                 jobs
             };
-            // Load template file
-            const vars = { params: inputContext.params, ...contextVars };
             const message = await template_1.renderTemplate(inputContext.templateFile, vars);
             if (!message) {
                 core.setFailed(`Cannot render template ${inputContext.templateFile}`);
                 return;
             }
-            postArgs.blocks = JSON.parse(message).blocks;
+            const blocks = JSON.parse(message).blocks;
+            postArgs.blocks = blocks.slice(0, 49);
         }
         const updateArgs = { ...postArgs, ts: (_a = inputContext.messageId) !== null && _a !== void 0 ? _a : '' };
         const slack = new web_api_1.WebClient(inputContext.botToken);
@@ -386,6 +377,112 @@ function isMultiVars(val) {
         val.variables !== undefined);
 }
 exports.isMultiVars = isMultiVars;
+
+
+/***/ }),
+
+/***/ 8330:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getSourceContext = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+async function getSourceContext(githubToken, owner, repo, sha, branchName) {
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    const query = `
+{
+  repository(owner: "${owner}", name: "${repo}") {
+    object(expression: "${sha}") {
+      ... on Commit {
+          additions
+          deletions
+          message
+          committedDate
+          authoredByCommitter
+          author {
+              name
+          }
+          committer {
+              name
+          }
+          url
+          associatedPullRequests(first: 1) {
+              nodes {
+                  headRefName
+                  baseRefName
+                  title
+                  bodyText
+                  url
+                  merged
+              }
+          }
+      }
+    }
+  }
+}`;
+    const octokit = github.getOctokit(githubToken);
+    const result = await octokit.graphql(query);
+    if (!((_a = result === null || result === void 0 ? void 0 : result.repository) === null || _a === void 0 ? void 0 : _a.object)) {
+        core.setFailed(`Error fetching sha: ${sha}`);
+    }
+    const object = result.repository.object;
+    const prs = (_c = (_b = object.associatedPullRequests) === null || _b === void 0 ? void 0 : _b.nodes) !== null && _c !== void 0 ? _c : [];
+    let pr = null;
+    if (prs.length > 0) {
+        pr = prs[0];
+    }
+    const branch = pr
+        ? pr.merged
+            ? pr.baseRefName
+            : pr.headRefName
+        : branchName !== null && branchName !== void 0 ? branchName : '';
+    const commitBy = object.authoredByCommitter
+        ? (_d = object.author) === null || _d === void 0 ? void 0 : _d.name
+        : `${(_e = object.committer) === null || _e === void 0 ? void 0 : _e.name}/${(_f = object.author) === null || _f === void 0 ? void 0 : _f.name}`;
+    const sourceContext = {
+        owner,
+        repo,
+        sha,
+        branch,
+        author: (_g = object.author) === null || _g === void 0 ? void 0 : _g.name,
+        committer: (_h = object.committer) === null || _h === void 0 ? void 0 : _h.name,
+        commitBy,
+        date: object.committedDate,
+        message: object.message,
+        url: object.url
+    };
+    if (pr) {
+        sourceContext.pr = {
+            title: pr.title,
+            body: pr.bodyText,
+            url: pr.url
+        };
+    }
+    return sourceContext;
+}
+exports.getSourceContext = getSourceContext;
 
 
 /***/ }),

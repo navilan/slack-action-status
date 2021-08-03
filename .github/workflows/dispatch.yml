@@ -1,0 +1,27 @@
+name: Test Workflow Dispatch
+on:
+  repository_dispatch:
+    types:
+      - ready-to-dispatch
+env:
+  slack_params: |
+    - name1: Slack Action Status
+    - link1: https://github.com/navilan/slack-action-status
+
+jobs:
+  Slack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Dispatch Complete !!
+        uses: ./
+        id: slack
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "Dispatch Received"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          sourceSHA:  ${{ github.event.client_payload.sha }}

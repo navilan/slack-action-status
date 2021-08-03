@@ -205,3 +205,23 @@ jobs:
           params: ${{ env.slack_params }}
           inclusionSuffix: "!!"
           forceFailure: true
+      - name: Begin Dispatch !!
+        if: success()
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: navilan/slack-action-status
+          event-type: ready-to-dispatch
+          client-payload: '{"run_id": "${{ github.run_id }}", "sha": "${{ github.sha }}" }'
+      - uses: ./
+        if: success()
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          messageId: ${{ needs.slack.outputs.message_id }}
+          botToken: ${{ secrets.SLACK_BOT_TOKEN }}
+          channelId: ${{ secrets.SLACK_CHANNEL_ID }}
+          templateFile: .github/workflows/slack-blocks.json.eta
+          status: "SUCCESS"
+          params: ${{ env.slack_params }}
+          inclusionSuffix: "!!"
+          forceSuccess: true

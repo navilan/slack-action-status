@@ -4,7 +4,7 @@
             "type": "header",
             "text": {
                 "type": "plain_text",
-                "text": ":flying_saucer: <%= it.gh.workflow %>",
+                "text": ":flying_saucer: <%= it.workflow.name %>",
                 "emoji": true
             }
         },
@@ -16,7 +16,7 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "On _<%= it.gh.eventName %>_ :point_right: *<%= it.gh.eventSource %>* by _@<%= it.gh.user %>_"
+                    "text": "On commit to *<%= it.source.branch %>* by _@<%= it.source.commitBy %>_"
                 }
             ]
         },
@@ -24,9 +24,32 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "<%= it.gh.description %>"
+                "text": "<%= it.source.message %>"
             }
         },
+        {
+            "type": "divider"
+        },
+        <% if(it.source.pr) {%>
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Linked Pull Request*\n <%= it.source.pr.title %>"
+            }
+        },
+        <% if(it.source.pr.body  && it.source.pr.body !== '') {%>
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "<%= it.source.pr.body %>"
+                }
+            ]
+        },
+        <% } %>
+        <% } %>
         {
             "type": "divider"
         },
@@ -71,16 +94,18 @@
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": "<<%= it.gh.links.workflow %> | Workflow>"
+                    "text": "<<%= it.workflow.url %> | Workflow>"
                 },
                 {
                     "type": "mrkdwn",
-                    "text": "<<%= it.gh.links.diff %> | Diff>"
+                    "text": "<<%= it.source.url %> | Commit>"
                 },
+                <% if (it.source.pr) {%>
                 {
                     "type": "mrkdwn",
-                    "text": "<<%= it.gh.links.eventSource %> | Source>"
+                    "text": "<<%= it.source.pr.url %> | Pull Request>"
                 },
+                <% } %>
                 {
                     "type": "mrkdwn",
                     "text": "<<%= it.params.link1 %> | <%= it.params.name1 %>>"
