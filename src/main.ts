@@ -1,8 +1,17 @@
 import * as core from '@actions/core'
 import {renderTemplate} from './template'
-import {ChatPostMessageArguments, WebClient} from '@slack/web-api'
+import {
+  Block,
+  ChatPostMessageArguments,
+  KnownBlock,
+  WebClient
+} from '@slack/web-api'
 
-import {processGithubContext, processInput} from './assembler'
+import {
+  processInput,
+  processSourceContext,
+  processWorkflowContext
+} from './assembler'
 import {getJobs} from './jobs'
 import {ActionError} from './parsers'
 import {PhaseStatus} from './types'
@@ -28,12 +37,13 @@ async function run(): Promise<void> {
       unfurl_media: false
     }
     if (inputContext.templateFile) {
-      const githubContext = processGithubContext()
+      const workflowContext = processWorkflowContext()
+      const githubContext = await processSourceContext(inputContext)
       const jobs = await getJobs(
         inputContext.githubToken,
         githubContext.owner,
         githubContext.repo,
-        githubContext.runId,
+        workflowContext.runId,
         (status: PhaseStatus) => inputContext.indicators[status] ?? '',
         inputContext.inclusionSuffix
       )
@@ -42,25 +52,28 @@ async function run(): Promise<void> {
           ? 'failed'
           : 'completed'
         const jobIndicator = inputContext.indicators[jobStatus]
-        const currentJob = jobs.find(j => j.name === githubContext.currentJobId)
+        const currentJob = jobs.find(
+          j => j.name === workflowContext.currentJobId
+        )
         if (currentJob) {
           currentJob.indicator = jobIndicator
           currentJob.status = jobStatus
         }
       }
-      const contextVars = {
-        gh: githubContext,
+      const vars = {
+        params: inputContext.params,
+        workflow: workflowContext,
+        source: githubContext,
         status: inputContext.status,
         jobs
       }
-      // Load template file
-      const vars = {params: inputContext.params, ...contextVars}
       const message = await renderTemplate(inputContext.templateFile, vars)
       if (!message) {
         core.setFailed(`Cannot render template ${inputContext.templateFile}`)
         return
       }
-      postArgs.blocks = JSON.parse(message).blocks
+      const blocks: (Block | KnownBlock)[] = JSON.parse(message).blocks
+      postArgs.blocks = blocks.slice(0, 49)
     }
     const updateArgs = {...postArgs, ts: inputContext.messageId ?? ''}
     const slack = new WebClient(inputContext.botToken)

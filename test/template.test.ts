@@ -6,24 +6,29 @@ import expected from './expected.json'
 
 const vars: TemplateVars = {
   status: 'Testing',
-  gh: {
+  workflow: {
     runId: 55796,
     currentJobId: '7789',
-    links: {
-      eventSource: 'https://github.com',
-      workflow: 'https://github.com/navilan/slack-action-status',
-      diff: 'https://github.com/navilan/slack-action-status/compare/aa6be6db2eef...80c99e0fbb1f'
-    },
-    workflow: 'build-test',
+    name: 'build-test',
+    url: 'https://github.com/navilan/slack-action-status'
+  },
+  source: {
     owner: 'navilan',
     repo: 'slack-action-status',
     sha: 'c5c7b0a3cf6b51d18ec7032eef5b8788fd483123',
+    author: 'navilan',
+    committer: 'navilan',
+    commitBy: 'navilan',
+    date: new Date(),
     branch: 'main',
-    eventName: 'push',
-    eventSource: 'main',
-    description:
+    message:
       '- Use the octokit API to get the job and step statuses(#11)\r\n- Add example for passing slack message id between jobs(#8)\n- Refactor code for better modularity(#10)\r\n - Improve Readme a bit.\r\n',
-    user: 'navilan'
+    url: 'https://github.com/commits',
+    pr: {
+      title: 'New PR',
+      body: 'Awesome changes',
+      url: 'https://github.com/pulls'
+    }
   },
   jobs: [
     {

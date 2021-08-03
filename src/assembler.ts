@@ -1,6 +1,12 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {Indicators, KVP, SlackActionStatusInput, SourceContext} from './types'
+import {
+  Indicators,
+  KVP,
+  SlackActionStatusInput,
+  SourceContext,
+  WorkflowContext
+} from './types'
 
 import {
   actionError,
@@ -8,17 +14,16 @@ import {
   isMultiVars,
   parseMultiLineKVP
 } from './parsers'
+import {getSourceContext} from './source'
 
 type SlackActionStatusInputs = `${string & keyof SlackActionStatusInput}`
 
 type Context = typeof github.context
 type WebhookPayload = Context['payload']
 type PullRequest = Exclude<WebhookPayload['pull_request'], undefined>
-
 type HasPullRequest = {
   pull_request: PullRequest
 }
-
 function hasPR(payload: WebhookPayload): payload is HasPullRequest {
   return payload.pull_request !== undefined && payload.pull_request !== null
 }
@@ -54,6 +59,7 @@ interface AssembledInput {
   channelId: string
   templateFile?: string
   messageId?: string
+  sourceSHA?: string
   status: string
   params: KVP
   indicators: Indicators
@@ -74,6 +80,7 @@ export function processInput(): AssembledInput | ActionError {
   const rawParams = parseMultiLineKVP(getInput('params', {required: false}))
   const forceFailure = getInput('forceFailure', {required: false}) === 'true'
   const forceSuccess = getInput('forceSuccess', {required: false}) === 'true'
+  const sourceSHA = getInput('sourceSHA', {required: false})
   let params
   if (isMultiVars(rawParams)) {
     params = rawParams
@@ -103,6 +110,7 @@ export function processInput(): AssembledInput | ActionError {
     messageId,
     status,
     params: params.variables,
+    sourceSHA,
     indicators,
     inclusionSuffix,
     forceFailure,
@@ -110,45 +118,39 @@ export function processInput(): AssembledInput | ActionError {
   }
 }
 
-export function processGithubContext(): SourceContext {
-  const {repo: repoFull, payload, ref, workflow, eventName} = github.context
+export function processWorkflowContext(): WorkflowContext {
+  core.info(JSON.stringify(github.context))
+  const {repo: repoFull, workflow} = github.context
   const {owner, repo} = repoFull
-  const branch = hasPR(payload)
-    ? payload.pull_request.head.ref
-    : ref.replace('refs/heads/', '')
-  const sha = hasPR(payload)
-    ? payload.pull_request.head.sha
-    : github.context.sha
-  const diff = hasPR(payload)
-    ? `${payload.pull_request._links.html.href}/files`
-    : payload.compare
-  const source = hasPR(payload) ? payload.pull_request.title : branch
-  const url = hasPR(payload)
-    ? payload.pull_request.html_url
-    : payload.head_commit.url
-  const description = hasPR(payload)
-    ? payload.pull_request.body
-    : payload.head_commit.message
-  const user = payload.sender?.login ?? owner
   const runId = github.context.runId
   const workflowUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`
   const currentJobId = github.context.job
   return {
     runId,
     currentJobId,
-    links: {
-      diff,
-      eventSource: url,
-      workflow: workflowUrl
-    },
-    workflow,
+    name: workflow,
+    url: workflowUrl
+  }
+}
+
+export async function processSourceContext(
+  inputContext: AssembledInput
+): Promise<SourceContext> {
+  const {owner, repo} = github.context.repo
+  const {payload, ref} = github.context
+  const branch = hasPR(payload)
+    ? payload.pull_request.head.ref
+    : ref.replace('refs/heads/', '')
+  const sha = hasPR(payload)
+    ? payload.pull_request.head.sha
+    : github.context.sha
+  const shaInput = (inputContext.sourceSHA ?? '').trim()
+  const sourceContext = await getSourceContext(
+    inputContext.githubToken,
     owner,
     repo,
-    sha,
-    branch,
-    eventSource: source,
-    eventName,
-    description,
-    user
-  }
+    shaInput === '' ? sha : shaInput,
+    branch
+  )
+  return sourceContext
 }
