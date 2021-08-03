@@ -209,7 +209,7 @@ jobs:
         if: success()
         uses: peter-evans/repository-dispatch@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           repository: navilan/slack-action-status
           event-type: ready-to-dispatch
           client-payload: '{"run_id": "${{ github.run_id }}", "sha": "${{ github.sha }}" }'
