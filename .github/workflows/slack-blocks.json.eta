@@ -9,9 +9,6 @@
             }
         },
         {
-            "type": "divider"
-        },
-        {
             "type": "context",
             "elements": [
                 {
@@ -26,6 +23,9 @@
                 "type": "mrkdwn",
                 "text": "<%= it.source.message %>"
             }
+        },
+        {
+            "type": "divider"
         },
         <% if(it.source.pr) {%>
         {
