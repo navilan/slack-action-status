@@ -1,3 +1,18 @@
+# [3.0.0](https://github.com/actions/typescript-action/compare/v2...v3.0.0) (2021-08-04)
+
+
+### Bug Fixes
+
+* Add message finalizer for dispatch workflow ([b275f65](https://github.com/actions/typescript-action/commit/b275f65b51a6ce6230eff8c985c434bf7929fc06))
+* Add source sha to all dispatch messages ([1256a25](https://github.com/actions/typescript-action/commit/1256a258caf5bb8369b65a6d103400ec09c54f32))
+* Revert dividers to emphasize header ([794094a](https://github.com/actions/typescript-action/commit/794094a917400495d90f6246e4c216d0df5b1944))
+* use repo token ([0d14ba7](https://github.com/actions/typescript-action/commit/0d14ba73cda756adf7c2ef89e4a20e5360a1876f))
+
+
+### Features
+
+* **source:** Get source context automatically ([5437c91](https://github.com/actions/typescript-action/commit/5437c91b54aa9f10a9236844df06ca274101aecc))
+
 # [2.0.0](https://github.com/actions/typescript-action/compare/v1...v2.0.0) (2021-07-24)
 
 
