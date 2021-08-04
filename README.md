@@ -1,10 +1,19 @@
-# Slack Action Status
+# Slack Action Status (V3)
 
 A Github Action Slack Notifier:
 
 * that can use Slack Block Kit for messages...
 * which provides a way to customize the notification message with templates...
 * that can possibly make build notifications look pretty...pretty...good
+
+## Features
+
+* Uses Slack Block Kit with `eta` templates
+* Uses Octokit Jobs API to fetch running jobs and steps
+* Uses Octokit GraphQL API to get details of the commit. This makes it possible to have:
+  * the commit message on a PR trigger
+  * the PR title and body on a merge trigger
+  * the commit and PR for a non code event (for example `repository_dispatch`) using a SHA override
 
 ## Usage
 
@@ -128,6 +137,11 @@ The context variables are well typed. They can be accessed through the default t
 
 You can see the type definition here:
 [Template Variables Typescript definition](./src/types.d.ts)
+
+## Contribution, Usability and Support
+
+Slack Action Status is used by remote dev teams on production systems. It is fairly compete in terms of the
+provided feature set. Bug reports, feature requests, fixes and enhancements are welcome as Issues / PRs.
 
 ## Thank You
 
